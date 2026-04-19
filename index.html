@@ -1,0 +1,3742 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>شجرة نسب قريش — The Quraish Lineage</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --panel-2: #e2e8f0;
+    --panel-3: #f1f5f9;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #b45309;
+    --accent-light: #f59e0b;
+    --accent-soft: #fef3c7;
+    --prophet: #059669;
+    --sahabi: #2563eb;
+    --kafir: #dc2626;
+    --ancestor: #7c3aed;
+    --neutral: #64748b;
+    --mother: #db2777;
+    --wife-line: #db2777;
+    --mother-line: #b45309;
+    --father-line: #2563eb;
+    --shadow: 0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    --shadow-lg: 0 10px 25px rgba(15,23,42,0.1), 0 4px 10px rgba(15,23,42,0.05);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Cairo', 'Amiri', sans-serif;
+    background: var(--bg); color: var(--text);
+    height: 100%; overflow: hidden;
+  }
+  header {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.95);
+    border-bottom: 1px solid var(--panel-2);
+    padding: 10px 20px; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow);
+  }
+  header h1 {
+    margin: 0; font-size: 20px; font-weight: 700;
+    color: var(--accent);
+  }
+  header .subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .controls { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+  .controls .btn-group {
+    display: flex; gap: 2px; align-items: center;
+    background: var(--panel-3);
+    padding: 2px; border-radius: 7px;
+    border: 1px solid var(--panel-2);
+  }
+  .controls .btn-group button {
+    border: none !important;
+    background: transparent !important;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .controls .btn-group button:hover {
+    background: var(--panel) !important;
+    color: var(--accent);
+  }
+  .controls .btn-group button.active {
+    background: var(--accent) !important;
+    color: #fff !important;
+  }
+  .controls .btn-divider {
+    width: 1px; height: 24px;
+    background: var(--panel-2);
+    margin: 0 2px;
+  }
+  .controls input[type="text"] {
+    background: var(--panel); border: 1px solid var(--panel-2);
+    color: var(--text); padding: 5px 10px; border-radius: 6px;
+    font-family: inherit; font-size: 12px; width: 180px;
+  }
+  .controls button {
+    background: var(--panel); border: 1px solid var(--panel-2);
+    color: var(--text); padding: 4px 9px; border-radius: 6px;
+    cursor: pointer; font-family: inherit; font-size: 12px;
+    transition: all 0.2s;
+  }
+  .controls button:hover { background: var(--panel-2); border-color: var(--accent); }
+  .controls button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  #svg-container {
+    position: absolute; top: var(--header-h, 76px); bottom: 0; left: 280px; right: 0;
+    overflow: hidden;
+    background: var(--bg);
+    transition: left 0.25s ease;
+    min-height: 200px;
+  }
+  /* ===== مربع الأشخاص الخارجيين ===== */
+  #external-box {
+    position: absolute;
+    top: 16px; left: 16px;
+    width: 280px;
+    max-height: calc(100% - 40px);
+    background: var(--panel);
+    border: 2px dashed var(--accent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    z-index: 15;
+    box-shadow: var(--shadow-lg);
+    overflow-y: auto;
+  }
+  #external-box .ext-title {
+    font-weight: 700; color: var(--accent);
+    font-size: 14px; margin-bottom: 3px;
+  }
+  #external-box .ext-sub {
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--panel-2);
+  }
+  #external-box .ext-group {
+    margin-top: 10px;
+  }
+  #external-box .ext-group-title {
+    font-size: 11px; font-weight: 700; color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 8px; border-radius: 4px;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+  #external-box .ext-person {
+    padding: 6px 8px;
+    background: var(--panel-3);
+    border-radius: 6px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1.5;
+    border-right: 3px solid transparent;
+  }
+  #external-box .ext-person:hover {
+    background: var(--accent-soft);
+    border-right-color: var(--accent);
+  }
+  #external-box .ext-person .ext-name {
+    font-weight: 700; color: var(--text);
+    display: block;
+  }
+  #external-box .ext-person .ext-origin {
+    font-size: 10px; color: var(--muted);
+    margin-top: 2px;
+    display: block;
+  }
+  /* حالة إخفاء القائمة الجانبية */
+  body.sidebar-hidden #svg-container { left: 0; }
+  body.sidebar-hidden #left-sidebar {
+    transform: translateX(-100%);
+  }
+  #left-sidebar { transition: transform 0.25s ease; }
+  svg { width: 100%; height: 100%; cursor: grab; background: var(--bg); }
+  svg:active { cursor: grabbing; }
+
+  /* ===== Left sidebar (Tabs) ===== */
+  #left-sidebar {
+    position: fixed; top: var(--header-h, 76px); bottom: 0; left: 0;
+    width: 280px; background: var(--panel);
+    border-right: 1px solid var(--panel-2);
+    z-index: 30;
+    box-shadow: var(--shadow);
+    display: flex; flex-direction: column;
+  }
+  .sidebar-close {
+    position: absolute; top: 6px; left: 8px;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--muted); font-size: 18px; font-weight: 700;
+    width: 28px; height: 28px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 5;
+  }
+  .sidebar-close:hover { background: var(--panel-2); color: var(--accent); }
+  /* على الديسكتوب: زر الإغلاق يظهر فقط كاختصار داخل القائمة */
+  @media (min-width: 769px) { .sidebar-close { top: 4px; font-size: 16px; } }
+  .sidebar-search {
+    padding: 10px 12px 10px 42px; background: var(--panel);
+    border-bottom: 1px solid var(--panel-2);
+    flex-shrink: 0;
+  }
+  .sidebar-search input {
+    width: 100%; padding: 7px 10px;
+    border: 1px solid var(--panel-2); border-radius: 6px;
+    background: var(--panel-3); color: var(--text);
+    font-family: inherit; font-size: 13px;
+    box-sizing: border-box;
+  }
+  .sidebar-search input:focus {
+    outline: none; border-color: var(--accent);
+    background: #fff;
+  }
+  .tabs {
+    display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+    border-bottom: 1px solid var(--panel-2);
+    background: var(--panel-3);
+    flex-shrink: 0;
+  }
+  .tab {
+    padding: 10px 4px; font-size: 12px; font-weight: 700;
+    text-align: center; cursor: pointer;
+    border-bottom: 3px solid transparent;
+    color: var(--muted); user-select: none;
+    transition: all 0.15s;
+    line-height: 1.2;
+  }
+  .tab:hover { background: var(--accent-soft); color: var(--text); }
+  .tab.active {
+    background: var(--panel); color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab .count {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    background: var(--panel-2); color: var(--muted);
+    padding: 1px 6px; border-radius: 8px; margin-right: 3px;
+    vertical-align: middle;
+  }
+  .tab.active .count { background: var(--accent); color: #fff; }
+
+  .tab-panels { flex: 1; overflow-y: auto; }
+  .tab-panel { display: none; padding: 4px 0; }
+  .tab-panel.active { display: block; }
+
+  .cat-subheader {
+    font-size: 11px; color: var(--accent); font-weight: 700;
+    padding: 8px 14px 4px; letter-spacing: 0.5px;
+    background: var(--accent-soft);
+    border-top: 1px solid var(--panel-2);
+    position: sticky; top: 0; z-index: 1;
+  }
+  .cat-subheader:first-child { border-top: none; }
+  .cat-item {
+    padding: 4px 14px 4px 8px; font-size: 13px;
+    display: flex; align-items: center; gap: 4px;
+    transition: background 0.15s;
+    border-right: 3px solid transparent;
+  }
+  .cat-item:hover { background: var(--panel-3); }
+  .cat-item.active {
+    background: var(--accent-soft);
+    border-right-color: var(--accent);
+    font-weight: 600;
+  }
+  .cat-item-main {
+    flex: 1; min-width: 0;
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0; cursor: pointer;
+  }
+  .cat-item-name {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cat-item .dot {
+    width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  }
+  .cat-item .rank {
+    font-size: 10px; color: var(--muted); background: var(--panel-3);
+    padding: 1px 6px; border-radius: 6px; margin-right: auto;
+    font-weight: 700;
+  }
+  /* علامات مميزة بجانب الاسم في قائمة الأسماء */
+  .cat-marker {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    font-size: 11px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .marker-external {
+    background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+  }
+  .marker-notintree {
+    background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc;
+  }
+
+  /* ملاحظة التصنيف في أعلى بانل الشخصية */
+  .category-note {
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .category-note strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .category-note .cat-origin {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .category-external {
+    background: #fef3c7; border: 1px solid #fcd34d;
+  }
+  .category-external strong { color: #92400e; }
+  .category-notintree {
+    background: #e0e7ff; border: 1px solid #a5b4fc;
+  }
+  .category-notintree strong { color: #3730a3; }
+  .cat-focus-btn {
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer; font-size: 13px;
+    padding: 3px 6px; border-radius: 5px;
+    opacity: 0.55; transition: opacity 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .cat-item:hover .cat-focus-btn { opacity: 1; }
+  .cat-focus-btn:hover {
+    background: var(--accent-soft); border-color: var(--accent);
+  }
+  .cat-focus-btn.active {
+    opacity: 1;
+    background: var(--accent); border-color: var(--accent);
+    filter: saturate(1.3);
+  }
+  .cat-subheader {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 6px;
+  }
+  .group-focus-btn {
+    background: var(--accent); color: #fff; border: none;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer;
+    font-size: 10px; font-weight: 700;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  .group-focus-btn:hover { background: #92400e; }
+  .group-focus-btn.active {
+    background: #78350f;
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  .legend {
+    position: fixed; bottom: 20px; right: 20px;
+    background: rgba(255,255,255,0.97); border: 1px solid var(--panel-2);
+    border-radius: 8px; padding: 12px 14px; z-index: 20;
+    font-size: 13px; backdrop-filter: blur(8px);
+    max-width: 240px; box-shadow: var(--shadow-lg);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .legend-close {
+    position: absolute; top: 4px; left: 6px;
+    background: transparent; border: none; cursor: pointer;
+    color: var(--muted); font-size: 14px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px;
+  }
+  .legend-close:hover { background: var(--panel-2); color: var(--accent); }
+  body.legend-hidden .legend {
+    opacity: 0; transform: translateY(20px); pointer-events: none;
+  }
+  .legend-title { font-weight: 700; margin-bottom: 8px; color: var(--accent); }
+  .legend-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 20px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Node styling */
+  .node rect {
+    stroke-width: 2px;
+    cursor: pointer;
+    transition: stroke 0.2s, stroke-width 0.2s;
+    filter: drop-shadow(0 1px 2px rgba(15,23,42,0.15));
+  }
+  body.style-outlined .node rect { stroke-width: 2.5px; }
+  .node:hover rect {
+    stroke: var(--accent) !important;
+    stroke-width: 3px;
+  }
+  .node.selected rect {
+    stroke: var(--accent) !important;
+    stroke-width: 4px;
+  }
+  .node text {
+    pointer-events: none;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 600;
+    fill: #fff;
+  }
+  .node .name-ar { font-size: 28px; }
+  .node .name-en { font-size: 20px; }
+  /* نمط filled: خلفية ملونة + خط أبيض */
+  body.style-filled .node text { fill: #fff; }
+  body.style-filled .node .name-en { fill: rgba(255,255,255,0.95); }
+  /* نمط outlined: خلفية بيضاء + حد وخط ملون حسب النوع */
+  body.style-outlined .node text { fill: var(--node-color, #111); }
+  body.style-outlined .node .name-en { fill: var(--node-color, #444); opacity: 0.85; }
+  /* زر التوسع/الطي (+/−) */
+  .node .toggle-btn circle {
+    transition: fill 0.15s;
+  }
+  .node .toggle-btn:hover circle {
+    fill: var(--accent-soft);
+  }
+
+  .link {
+    fill: none;
+    stroke: #cbd5e1;
+    stroke-width: 1.5px;
+    transition: stroke 0.2s, stroke-width 0.2s;
+  }
+  /* تمييز خطوط الأبناء المباشرين للشخص المُختار */
+  .link.child-link {
+    stroke: var(--accent);
+    stroke-width: 3.5px;
+    filter: drop-shadow(0 0 3px rgba(180, 83, 9, 0.35));
+  }
+  /* تمييز خطوط سلسلة الأجداد للشخص المُختار (نفس اللون أفتح) */
+  .link.ancestor-link {
+    stroke: var(--accent-light);
+    stroke-width: 2.8px;
+    filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.3));
+  }
+  .relation-line {
+    fill: none;
+    stroke-width: 3px;
+    stroke-dasharray: 6 4;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .relation-line.active { opacity: 0.85; }
+  .relation-line.mother { stroke: var(--mother-line); }
+  .relation-line.wife { stroke: var(--wife-line); }
+  .relation-line.father { stroke: var(--father-line); }
+  /* خط الزواج: لون بنفسجي مميز + مسار مستمر (غير متقطع) */
+  .marriage-line {
+    fill: none;
+    stroke: #9333ea;
+    stroke-width: 3px;
+    opacity: 0.7;
+    stroke-linecap: round;
+    pointer-events: none;
+  }
+  .marriage-heart {
+    fill: #9333ea;
+    opacity: 0.85;
+  }
+
+  /* Side panel - RIGHT side now */
+  #side-panel {
+    position: fixed; top: var(--header-h, 76px); bottom: 0; right: 0;
+    width: 400px; background: var(--panel);
+    border-left: 1px solid var(--panel-2);
+    overflow-y: auto; padding: 20px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 40;
+    box-shadow: -4px 0 12px rgba(15,23,42,0.06);
+  }
+  #side-panel.open { transform: translateX(0); }
+  #side-panel .panel-header-actions {
+    display: flex; gap: 6px; margin-bottom: 10px;
+    padding-bottom: 10px; border-bottom: 1px solid var(--panel-2);
+  }
+  #side-panel .panel-btn {
+    padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--panel-2); background: var(--panel-3);
+    color: var(--text);
+  }
+  #side-panel .panel-btn:hover { background: var(--panel-2); }
+  #side-panel .panel-btn.panel-btn-danger {
+    background: #fee2e2; border-color: #fca5a5; color: #b91c1c;
+  }
+  #side-panel .panel-btn.panel-btn-danger:hover { background: #fecaca; }
+
+  /* FAB — زر عائم على الموبايل */
+  #info-fab {
+    position: fixed; bottom: 20px; left: 20px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 28px;
+    padding: 10px 16px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700;
+    box-shadow: var(--shadow-lg); z-index: 45;
+    display: flex !important; align-items: center; gap: 8px;
+    transition: transform 0.2s;
+  }
+  #info-fab:hover { transform: scale(1.05); }
+  #info-fab .fab-icon { font-size: 18px; }
+  #side-panel h2 {
+    margin: 0 0 4px; font-size: 24px; font-weight: 700;
+    color: var(--accent);
+  }
+  #side-panel .en-name { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  #side-panel .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600; margin-bottom: 12px;
+  }
+  #side-panel .badge.prophet { background: var(--prophet); color: #fff; }
+  #side-panel .badge.sahabi { background: var(--sahabi); color: #fff; }
+  #side-panel .badge.kafir { background: var(--kafir); color: #fff; }
+  #side-panel .badge.ancestor { background: var(--ancestor); color: #fff; }
+  #side-panel .badge.mother { background: var(--mother); color: #fff; }
+  #side-panel .badge.neutral { background: var(--neutral); color: #fff; }
+
+  /* صف أعلى البانل فيه الشارة وزر التركيز */
+  .panel-head-row {
+    display: flex; align-items: center; gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .panel-head-row .badge { margin-bottom: 0; }
+  .panel-focus-btn {
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid #f3d9a4;
+    padding: 6px 12px; border-radius: 8px;
+    cursor: pointer; font-family: inherit;
+    font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 5px;
+    transition: all 0.15s;
+    margin-right: auto;
+  }
+  .panel-focus-btn:hover {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .panel-focus-btn.active {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .panel-focus-btn.active .pfb-label::after {
+    content: '';
+  }
+
+  #side-panel .section {
+    margin-top: 16px; padding-top: 12px;
+    border-top: 1px solid var(--panel-2);
+  }
+  #side-panel .section h3 {
+    margin: 0 0 8px; font-size: 15px; color: var(--accent);
+    font-weight: 700;
+  }
+  #side-panel .section p { margin: 4px 0; font-size: 14px; line-height: 1.7; }
+  /* اسم شخص غير موجود في الشجرة — بدون تنسيق رابط مميز */
+  .spouse-plain {
+    cursor: pointer;
+    color: var(--text);
+    border-bottom: 1px dotted var(--panel-2);
+    font-weight: 600;
+  }
+  .spouse-plain:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* روابط الأشخاص — تنسيق chip مميز داخل معلومات الشخص */
+  .person-link {
+    display: inline-block;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid #f3d9a4;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    margin: 1px 2px;
+    line-height: 1.6;
+  }
+  .person-link:hover,
+  .person-link:active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .person-link::before {
+    content: '›';
+    margin-left: 4px;
+    opacity: 0.6;
+    font-weight: 700;
+  }
+  #side-panel .relation-summary {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 8px; padding: 12px; margin-top: 14px;
+    font-size: 13px; line-height: 1.8;
+    color: #78350f;
+  }
+  #side-panel .relation-summary strong { color: var(--accent); }
+  #side-panel ul { padding-right: 18px; margin: 6px 0; }
+  #side-panel li { font-size: 14px; line-height: 1.8; }
+
+  .empty-msg {
+    color: var(--muted); font-style: italic; font-size: 13px;
+  }
+
+  /* Welcome overlay */
+  #welcome {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--panel); padding: 24px 30px;
+    border-radius: 12px; border: 2px solid var(--accent);
+    max-width: 500px; z-index: 60; text-align: center;
+    box-shadow: var(--shadow-lg);
+  }
+  #welcome h2 { color: var(--accent); margin-top: 0; }
+  #welcome p { font-size: 14px; line-height: 1.8; color: var(--text); }
+  #welcome button {
+    background: var(--accent); color: #fff; border: none;
+    padding: 8px 24px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-weight: 700; font-size: 14px;
+    margin-top: 10px;
+  }
+  #welcome button:hover { background: #92400e; }
+
+  /* ====== حوار الطباعة ====== */
+  .print-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15,23,42,0.5);
+    z-index: 70;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .print-modal {
+    background: var(--panel); padding: 26px 28px;
+    border-radius: 12px; border: 1px solid var(--panel-2);
+    width: 90%; max-width: 440px;
+    box-shadow: var(--shadow-lg); position: relative;
+  }
+  .print-modal h3 {
+    margin: 0 0 16px; color: var(--accent); font-size: 18px;
+  }
+  .print-modal label {
+    display: block; font-size: 13px; color: var(--muted);
+    margin-bottom: 6px; font-weight: 600;
+  }
+  .print-modal input[type=text] {
+    width: 100%; padding: 10px 12px;
+    border: 1px solid var(--panel-2); border-radius: 6px;
+    font-family: inherit; font-size: 14px;
+    background: var(--panel-3); color: var(--text);
+    box-sizing: border-box;
+  }
+  .print-modal input[type=text]:focus {
+    outline: none; border-color: var(--accent); background: #fff;
+  }
+  .print-actions {
+    display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;
+  }
+  .print-actions button {
+    padding: 8px 18px; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    border: 1px solid var(--panel-2); background: var(--panel-3);
+    color: var(--text);
+  }
+  .print-actions button#btn-do-print {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .print-modal .close-btn {
+    position: absolute; top: 8px; left: 10px;
+    background: none; border: none; font-size: 20px;
+    color: var(--muted); cursor: pointer;
+  }
+
+  /* ====== حوار المساعدة ====== */
+  .help-modal {
+    background: var(--panel);
+    padding: 26px 28px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-2);
+    width: 92%;
+    max-width: 780px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    line-height: 1.7;
+  }
+  .help-modal .close-btn {
+    position: absolute; top: 10px; left: 14px;
+    background: var(--panel-3); border: 1px solid var(--panel-2);
+    width: 32px; height: 32px; border-radius: 50%;
+    font-size: 16px; color: var(--text); cursor: pointer;
+  }
+  .help-modal .close-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .help-modal h2 {
+    margin: 0 0 16px;
+    color: var(--accent);
+    font-size: 22px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--accent-soft);
+  }
+  .help-section {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid var(--panel-2);
+  }
+  .help-section:first-of-type { border-top: none; margin-top: 10px; padding-top: 0; }
+  .help-section h3 {
+    color: var(--accent);
+    font-size: 16px;
+    margin: 0 0 8px;
+  }
+  .help-section h4 {
+    color: var(--text);
+    font-size: 14px;
+    margin: 10px 0 4px;
+    font-weight: 700;
+  }
+  .help-section p {
+    margin: 4px 0;
+    font-size: 13px;
+  }
+  .help-section ul, .help-section ol {
+    padding-right: 20px;
+    margin: 6px 0;
+  }
+  .help-section li {
+    font-size: 13px;
+    margin: 3px 0;
+  }
+  .help-section b { color: var(--accent); }
+  .help-group {
+    background: var(--panel-3);
+    padding: 8px 14px;
+    border-radius: 6px;
+    margin: 8px 0;
+  }
+  .help-colors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .help-colors > div {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .help-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+  }
+  @media (max-width: 768px) {
+    .help-modal { padding: 18px 16px; max-height: 92vh; }
+    .help-modal h2 { font-size: 17px; }
+    .help-colors { grid-template-columns: 1fr; }
+  }
+
+  /* ====== تصميم الموبايل (عرض ≤ 768px) — تصميم مبسط ======
+     الفلسفة:
+     - هيدر رفيع (44px): [⋮ أدوات]  العنوان  [☰ أسماء]
+     - الشجرة تملأ كل المساحة المتبقية
+     - FAB دائري للتوسيط (↻) في الزاوية السفلى — دائمًا مرئي
+     - بطاقة Peek سفلية تظهر فقط عند اختيار شخص؛ تتمدد لعرض التفاصيل
+     - Tools Sheet يفتح من ⋮؛ Names Drawer يفتح من ☰
+  */
+  @media (max-width: 768px) {
+    html, body { height: 100%; overflow: hidden; }
+
+    header .controls { display: none !important; }
+    header .subtitle { display: none; }
+
+    header {
+      display: flex; flex-direction: row; align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      height: 44px; max-height: 44px;
+      gap: 6px;
+    }
+    header > div:first-child { flex: 1; text-align: center; }
+    header h1 { font-size: 15px; margin: 0; line-height: 1; }
+
+    .mobile-icon-btn {
+      background: transparent; border: 1px solid var(--panel-2);
+      color: var(--text); width: 36px; height: 36px;
+      border-radius: 8px; cursor: pointer;
+      display: flex !important; align-items: center; justify-content: center;
+      font-size: 20px; padding: 0; flex-shrink: 0;
+    }
+    .mobile-icon-btn:active { background: var(--panel-2); }
+
+    /* الشجرة تملأ المساحة تحت الهيدر */
+    #svg-container {
+      top: 44px !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      touch-action: none;
+    }
+    #svg-container svg {
+      touch-action: none;
+    }
+
+    /* ===== FAB التوسيط ===== */
+    #reset-fab {
+      display: flex !important;
+      position: fixed;
+      bottom: 20px; left: 16px;
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--accent);
+      border: 1px solid var(--panel-2);
+      box-shadow: var(--shadow-lg);
+      font-size: 24px; font-weight: 700;
+      align-items: center; justify-content: center;
+      cursor: pointer;
+      z-index: 40;
+      transition: bottom 0.25s ease;
+    }
+    #reset-fab:active { background: var(--panel-3); }
+    /* ينزاح لفوق لما Peek Card تظهر */
+    body.has-selection #reset-fab { bottom: 110px; }
+    body.peek-expanded #reset-fab { opacity: 0; pointer-events: none; }
+
+    /* ===== Peek Card ===== */
+    #peek-card {
+      display: block !important;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--panel-2);
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -4px 20px rgba(15,23,42,0.12);
+      z-index: 45;
+      padding: 8px 14px 14px;
+      transform: translateY(100%);
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), height 0.28s ease;
+      height: auto;
+      max-height: 72vh;
+      overflow: hidden;
+      touch-action: pan-y;
+    }
+    body.has-selection #peek-card { transform: translateY(0); }
+    body.peek-expanded #peek-card {
+      height: 72vh;
+      overflow-y: auto;
+    }
+    .peek-handle {
+      width: 40px; height: 4px;
+      background: var(--panel-2);
+      border-radius: 2px;
+      margin: 0 auto 10px;
+    }
+    .peek-summary {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .peek-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 16px; font-weight: 700;
+      padding: 0 2px;
+    }
+    .peek-badge {
+      font-size: 10px; font-weight: 600;
+      padding: 3px 8px; border-radius: 10px;
+      color: #fff;
+    }
+    .peek-badge.prophet  { background: var(--prophet); }
+    .peek-badge.sahabi   { background: var(--sahabi); }
+    .peek-badge.kafir    { background: var(--kafir); }
+    .peek-badge.ancestor { background: var(--ancestor); }
+    .peek-badge.mother   { background: var(--mother); }
+    .peek-badge.neutral  { background: var(--neutral); }
+    .peek-actions {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .peek-actions button {
+      flex: 1;
+      min-height: 40px;
+      border: 1px solid var(--panel-2);
+      background: var(--panel-3);
+      color: var(--text);
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .peek-actions button:active { background: var(--panel-2); }
+    .peek-actions button.active {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+    }
+    .peek-actions .peek-btn-close {
+      flex: 0 0 40px; max-width: 40px;
+      background: #fee2e2; border-color: #fca5a5; color: #b91c1c;
+    }
+    .peek-details {
+      display: none;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--panel-2);
+      padding-bottom: 60px;
+    }
+    body.peek-expanded .peek-details { display: block; }
+    body.peek-expanded .peek-card { cursor: default; }
+
+    /* إخفاء البانل الجانبي الأصلي تمامًا على الموبايل (محتواه يتدمج في Peek details) */
+    #side-panel { display: none !important; }
+
+    /* ===== Names Drawer ===== */
+    #left-sidebar {
+      top: 0; bottom: 0;
+      width: 85%; max-width: 320px;
+      z-index: 55;
+      box-shadow: -2px 0 16px rgba(15,23,42,0.3);
+      transform: translateX(-100%);
+    }
+    body:not(.sidebar-hidden) #left-sidebar { transform: translateX(0); }
+    body:not(.sidebar-hidden)::after {
+      content: ''; position: fixed; inset: 0;
+      background: rgba(15,23,42,0.45); z-index: 54;
+    }
+
+    /* ===== Tools Sheet ===== */
+    #mobile-menu-sheet {
+      display: block;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--panel);
+      border-top-left-radius: 16px;
+      border-top-right-radius: 16px;
+      z-index: 58;
+      padding: 12px 16px 20px;
+      transform: translateY(100%);
+      transition: transform 0.25s ease;
+      box-shadow: 0 -4px 20px rgba(15,23,42,0.2);
+    }
+    body.menu-open #mobile-menu-sheet { transform: translateY(0); }
+    body.menu-open::before {
+      content: ''; position: fixed; inset: 0;
+      background: rgba(15,23,42,0.45); z-index: 57;
+    }
+    .sheet-handle {
+      width: 40px; height: 4px; background: var(--panel-2);
+      border-radius: 2px; margin: 0 auto 12px;
+    }
+    .sheet-title {
+      font-weight: 700; font-size: 14px; margin-bottom: 10px;
+      color: var(--accent);
+    }
+    .sheet-items {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .sheet-items button {
+      padding: 12px 14px; font-size: 13px;
+      background: var(--panel-3); border: 1px solid var(--panel-2);
+      color: var(--text); border-radius: 8px; cursor: pointer;
+      text-align: right;
+      font-family: inherit;
+      min-height: 44px;
+    }
+    .sheet-items button:active { background: var(--panel-2); }
+    .sheet-items button.active {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+    }
+
+    /* إخفاء FAB القديم على الموبايل */
+    #info-fab { display: none !important; }
+
+    /* المفتاح أصغر */
+    .legend {
+      top: 52px; right: 8px;
+      bottom: auto;
+      font-size: 10px; padding: 6px 8px;
+      max-width: 160px;
+    }
+    .legend-row { margin: 1px 0; }
+    .legend-dot { width: 10px; height: 10px; }
+
+    #welcome { max-width: 92%; padding: 16px 18px; }
+    #welcome h2 { font-size: 17px; }
+    #welcome p { font-size: 11px; }
+  }
+
+  /* الديسكتوب: إخفاء عناصر الموبايل */
+  @media (min-width: 769px) {
+    #peek-card, #reset-fab, #mobile-menu-sheet, .mobile-icon-btn { display: none !important; }
+  }
+
+  /* الديسكتوب: FAB مخفي دائماً */
+  @media (min-width: 769px) {
+    #info-fab { display: none !important; }
+  }
+
+  /* ===================================================
+     Print styles — طباعة A4 (layout ثابت وبسيط)
+     =================================================== */
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  #print-header { display: none; }  /* مخفي على الشاشة */
+
+  @media print {
+    html, body {
+      background: #fff !important;
+      color: #000 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      height: auto !important;
+      width: auto !important;
+      overflow: visible !important;
+      display: block !important;
+    }
+    /* إخفاء كل الواجهة */
+    header, #left-sidebar, #side-panel, #welcome, #info-fab, #print-dialog {
+      display: none !important;
+    }
+    /* عنوان الصفحة — block element عادي يأخذ مكانه */
+    #print-header {
+      display: block !important;
+      text-align: center;
+      font-family: 'Cairo', 'Amiri', sans-serif;
+      color: #000;
+      margin: 0 0 4mm 0;
+      padding: 0 5mm;
+      page-break-after: avoid;
+    }
+    #print-header h1 {
+      margin: 0 0 2mm 0;
+      font-size: 16pt; font-weight: bold;
+      line-height: 1.3;
+    }
+    #print-header .subtitle {
+      margin: 0;
+      font-size: 11pt; color: #333; font-weight: 600;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+    /* حاوية SVG تأخذ باقي الصفحة */
+    #svg-container {
+      position: static !important;
+      top: auto !important; left: auto !important;
+      right: auto !important; bottom: auto !important;
+      width: 100% !important;
+      height: 170mm !important;
+      overflow: visible !important;
+      background: #fff !important;
+      display: block !important;
+    }
+    svg {
+      display: block !important;
+      width: 100% !important;
+      height: 170mm !important;
+      background: #fff !important;
+    }
+    .link { stroke: #555 !important; stroke-width: 1.2px !important; }
+    .node rect { filter: none !important; }
+    .relation-line.active { opacity: 1 !important; }
+    .toggle-btn { display: inline !important; }
+
+    /* المفتاح يطبع فقط لو كان ظاهرًا على الشاشة */
+    body.legend-hidden .legend { display: none !important; }
+    .legend {
+      position: fixed !important;
+      bottom: 5mm !important; right: 5mm !important;
+      background: #fff !important;
+      box-shadow: none !important;
+      border: 1px solid #999 !important;
+      max-width: 55mm !important;
+      font-size: 9pt !important;
+      padding: 4mm !important;
+      page-break-inside: avoid;
+    }
+    .legend-close { display: none !important; }
+  }
+  /* عند استخدام class printing (قبل طباعة عبر JS) لضمان ملء الصفحة */
+  body.printing #svg-container { background: #fff !important; }
+  body.printing svg { background: #fff !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="mobile-icon-btn" id="m-menu-btn" onclick="openMobileMenu()" style="display:none" title="القائمة">⋮</button>
+  <div>
+    <h1>شجرة نسب قريش</h1>
+    <div class="subtitle">The Quraish Lineage — النبي ﷺ والصحابة وكفار قريش</div>
+  </div>
+  <button class="mobile-icon-btn" id="m-sidebar-btn" onclick="toggleMobileSidebar()" style="display:none" title="قائمة الأسماء">☰</button>
+  <div class="controls">
+    <div class="btn-group">
+      <button id="btn-marriage" title="إظهار خطوط الزواج للشخص المحدد">💍 خط الزواج</button>
+      <button id="btn-mother-line" title="إظهار خط يربط الشخص المحدد بأمه إن كانت في الشجرة">🏠 خط الأم</button>
+      <button id="btn-focus" title="إظهار نسب الشخص المحدد فقط مع النبي ﷺ" style="display:none">🎯 تركيز على المحدد</button>
+      <button id="btn-clear-focus" title="إلغاء كل أوضاع التركيز" onclick="setFocus([], null)" style="display:none">❌ إلغاء التركيز</button>
+      <button id="btn-show-children" title="إظهار جميع أبناء وأحفاد الشخص المحدد">⬇️ أبناء المحدد</button>
+    </div>
+    <div class="btn-divider"></div>
+    <div class="btn-group">
+      <button id="btn-prophet" title="اختيار النبي محمد ﷺ وتركيز الشجرة عليه">🕌 النبي ﷺ</button>
+      <button id="btn-expand" title="عرض كامل الشجرة بكل ارتباطاتها">⇲ عرض الكل</button>
+      <button id="btn-collapse" title="إبقاء نسب النبي ﷺ المباشر فقط">⇱ طي الكل</button>
+      <button id="btn-reset" title="إعادة توسيط الشجرة">↻ توسيط</button>
+    </div>
+    <div class="btn-divider"></div>
+    <div class="btn-group">
+      <button id="btn-lang" title="تبديل اللغة المعروضة على عقد الشجرة">🌐 عربي</button>
+      <button id="btn-style" title="تبديل نمط ألوان بطاقات الأسماء">🎨 النمط</button>
+      <button id="btn-toggle-legend" title="إظهار/إخفاء مفتاح الشجرة" class="active">🗂️ المفتاح</button>
+      <button id="btn-toggle-sidebar" title="إظهار/إخفاء قائمة الأسماء" class="active">☰ القائمة</button>
+      <button id="btn-help" title="دليل استخدام التطبيق">❓ المساعدة</button>
+      <button id="btn-print" title="طباعة ما هو ظاهر على الشاشة">🖨️ طباعة</button>
+    </div>
+  </div>
+</header>
+
+<!-- عنوان الطباعة (يظهر فقط على الورقة) -->
+<div id="print-header">
+  <h1>شجرة نسب قريش</h1>
+  <div class="subtitle" id="print-subtitle-text"></div>
+</div>
+
+<!-- حوار المساعدة -->
+<div id="help-dialog" class="print-overlay" style="display:none">
+  <div class="help-modal">
+    <button class="close-btn" onclick="document.getElementById('help-dialog').style.display='none'">✕</button>
+    <h2>📖 دليل استخدام تطبيق شجرة نسب قريش</h2>
+
+    <div class="help-section">
+      <h3>📌 نظرة عامة</h3>
+      <p>تطبيق تفاعلي لعرض شجرة نسب قريش يحتوي على النبي محمد ﷺ وأهل بيته، العشرة المبشرين بالجنة، أمهات المؤمنين، زعماء كفار قريش، وأجداد النبي ﷺ من فِهر.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>🎯 التنقل في الشجرة</h3>
+      <ul>
+        <li><b>السحب</b> بإصبع/ماوس لتحريك الشجرة</li>
+        <li><b>عجلة الماوس</b> أو <b>الضغط بإصبعين</b> للتكبير/التصغير</li>
+        <li><b>الضغط على أي بطاقة</b> يختار الشخص ويفتح تفاصيله</li>
+        <li><b>+ / −</b> في دوائر بأسفل البطاقات لإظهار/إخفاء الأبناء</li>
+        <li>دائرة <b>برتقالية (+)</b> تعني وجود أبناء مخفيين</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>⚙️ الأزرار في الأعلى</h3>
+      <div class="help-group">
+        <h4>المجموعة الأولى — أوامر الشخص المحدد</h4>
+        <ul>
+          <li><b>💍 خط الزواج</b> — يرسم خطوط زواج بنفسجية للمحدد (مع ♥ في المنتصف)</li>
+          <li><b>🏠 خط الأم</b> — يرسم خطوط برتقالية تربط المحدد بأمه وأبنائه</li>
+          <li><b>🎯 تركيز على المحدد</b> — يُظهر نسب المحدد مع النبي ﷺ فقط</li>
+          <li><b>⬇️ أبناء المحدد</b> — يفتح كل أبناء وأحفاد المحدد حتى آخر السلسلة</li>
+        </ul>
+      </div>
+      <div class="help-group">
+        <h4>المجموعة الثانية — التنقل</h4>
+        <ul>
+          <li><b>🕌 النبي ﷺ</b> — يختار النبي ويركّز الشجرة عليه</li>
+          <li><b>⇲ عرض الكل</b> — يوسّع الشجرة كاملة</li>
+          <li><b>⇱ طي الكل</b> — يُبقي نسب النبي ﷺ المباشر فقط</li>
+          <li><b>↻ توسيط</b> — يعيد توسيط الشجرة على الشاشة</li>
+        </ul>
+      </div>
+      <div class="help-group">
+        <h4>المجموعة الثالثة — الواجهة</h4>
+        <ul>
+          <li><b>🌐 عربي / English</b> — تبديل اللغة على البطاقات</li>
+          <li><b>🎨 النمط</b> — بطاقات ملونة (filled) أو فارغة (outlined)</li>
+          <li><b>🗂️ المفتاح</b> — إظهار/إخفاء مفتاح الألوان</li>
+          <li><b>☰ القائمة</b> — إظهار/إخفاء قائمة الأسماء الجانبية</li>
+          <li><b>🖨️ طباعة</b> — طباعة ما هو معروض (A4 Landscape)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>🗂️ قائمة الأسماء الجانبية</h3>
+      <p>مقسّمة إلى 4 تابات: <b>صحابي</b>، <b>صحابية</b>، <b>كفار</b>، <b>أخرى</b>.</p>
+      <ul>
+        <li>العشرة المبشرون وأمهات المؤمنين مرتبون حسب الأفضلية، والباقون أبجديًا</li>
+        <li>⚑ (كهرماني) = الشخص من خارج قريش</li>
+        <li>◇ (أزرق) = قرشي لكن نسبه غير موجود كاملاً في الشجرة</li>
+        <li>🎯 بجوار أي اسم = تركيز فردي (يُضاف/يُزال من مجموعة التركيز الحالية)</li>
+        <li>🎯 بجوار عنوان المجموعة = تركيز المجموعة كلها</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>📦 المربع الجانبي للأشخاص الخارجيين</h3>
+      <p>يظهر عند التركيز على شخص خارج الشجرة (مثل زوجات النبي ﷺ غير القرشيات). يعرض أسماءهم وأصولهم وقبائلهم.</p>
+    </div>
+
+    <div class="help-section">
+      <h3>🖨️ الطباعة</h3>
+      <ol>
+        <li>اضبط الشجرة (توسيع/طي/تركيز) كما تريدها في الطباعة</li>
+        <li>اضغط 🖨️ <b>طباعة</b></li>
+        <li>اكتب <b>عنواناً رئيسياً</b> اختياري (يتم ملؤه تلقائياً عند التركيز)</li>
+        <li>اضغط <b>طباعة الآن</b></li>
+      </ol>
+      <p style="color:var(--muted); font-size:12px">الصفحة المطبوعة تحتوي: العنوان + الشجرة + مفتاح الألوان (لو ظاهرًا) + مربع الأشخاص الخارجيين (إن وُجد).</p>
+    </div>
+
+    <div class="help-section">
+      <h3>🎨 ألوان بطاقات الأشخاص</h3>
+      <div class="help-colors">
+        <div><span class="help-dot" style="background:#059669"></span> النبي محمد ﷺ</div>
+        <div><span class="help-dot" style="background:#2563eb"></span> صحابي</div>
+        <div><span class="help-dot" style="background:#dc2626"></span> من كفار قريش</div>
+        <div><span class="help-dot" style="background:#7c3aed"></span> جد من أجداد النبي ﷺ</div>
+        <div><span class="help-dot" style="background:#db2777"></span> أم المؤمنين</div>
+        <div><span class="help-dot" style="background:#64748b"></span> أخرى (من قريش)</div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>💡 أمثلة عملية</h3>
+      <ul>
+        <li><b>لعرض نسب علي مع النبي فقط</b>: اختر علي → اضغط 🎯 تركيز على المحدد</li>
+        <li><b>لعرض زواج علي بفاطمة</b>: اختر علي → اضغط 💍 خط الزواج</li>
+        <li><b>لعرض أم كل شخص</b>: اختر الشخص → اضغط 🏠 خط الأم</li>
+        <li><b>لمقارنة أنساب أمهات المؤمنين</b>: اضغط 🎯 تركيز المجموعة بجانب "أمهات المؤمنين"</li>
+        <li><b>لعرض ذرية عبد المطلب</b>: اختر عبد المطلب → اضغط ⬇️ أبناء المحدد</li>
+      </ul>
+    </div>
+
+    <div class="help-section">
+      <h3>📱 استخدام التطبيق على الموبايل</h3>
+      <ul>
+        <li><b>☰</b> (يمين) — قائمة الأسماء</li>
+        <li><b>⋮</b> (يسار) — قائمة الأدوات الإضافية</li>
+        <li><b>↻</b> (زر عائم) — إعادة التوسيط</li>
+        <li>عند اختيار شخص تظهر <b>بطاقة سفلية</b> (Peek Card) فيها اسمه وأزرار سريعة. اسحبها لأعلى لرؤية التفاصيل الكاملة.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- حوار إعدادات الطباعة -->
+<div id="print-dialog" class="print-overlay" style="display:none">
+  <div class="print-modal">
+    <button class="close-btn" onclick="document.getElementById('print-dialog').style.display='none'">✕</button>
+    <h3>إعدادات الطباعة</h3>
+    <label>العنوان الرئيسي (اختياري)</label>
+    <input type="text" id="print-subtitle" placeholder="اكتب عنوانًا رئيسيًا أو اتركه فارغًا" />
+    <div class="print-actions">
+      <button id="btn-do-print">🖨️ طباعة الآن</button>
+      <button onclick="document.getElementById('print-dialog').style.display='none'">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<div id="welcome">
+  <h2>أهلاً بك</h2>
+  <p>
+    هذه شجرة تفاعلية لنسب قريش تبدأ من الجد الأعلى <strong>فِهر (قريش)</strong>
+    وتنتهي عند النبي محمد ﷺ وأصحابه.
+    <br><br>
+    • اضغط على أي شخص لعرض سيرته وأهم أدواره.
+    <br>
+    • الألوان تميّز بين النبي ﷺ والصحابة وكفار قريش والأجداد.
+    <br>
+    • زر <strong>"صلة النبي ﷺ"</strong> يرسم خطوطًا ملوّنة تربط الشخص بالنبي من جهة الأب والأم والزوجة.
+    <br>
+    • استخدم العجلة للتكبير، واسحب للتحريك.
+  </p>
+  <button onclick="document.getElementById('welcome').style.display='none'">ابدأ</button>
+</div>
+
+<aside id="left-sidebar">
+  <button class="sidebar-close" onclick="hideSidebar()" title="إخفاء قائمة الأسماء">✕</button>
+  <div class="sidebar-search">
+    <input type="text" id="search" placeholder="🔍 ابحث بالاسم…" />
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="sahabi" onclick="switchTab('sahabi')">🕋 صحابي <span class="count" id="count-sahabi">0</span></div>
+    <div class="tab" data-tab="sahabiya" onclick="switchTab('sahabiya')">🌸 صحابية <span class="count" id="count-sahabiya">0</span></div>
+    <div class="tab" data-tab="kafir" onclick="switchTab('kafir')">⚔️ كفار <span class="count" id="count-kafir">0</span></div>
+    <div class="tab" data-tab="other" onclick="switchTab('other')">👤 أخرى <span class="count" id="count-other">0</span></div>
+  </div>
+  <div class="tab-panels">
+    <div class="tab-panel active" id="panel-sahabi"></div>
+    <div class="tab-panel" id="panel-sahabiya"></div>
+    <div class="tab-panel" id="panel-kafir"></div>
+    <div class="tab-panel" id="panel-other"></div>
+  </div>
+</aside>
+
+<div id="svg-container">
+  <svg id="tree"></svg>
+  <!-- مربع الأشخاص غير الموجودين في الشجرة (يظهر عند التركيز عليهم) -->
+  <div id="external-box" style="display:none">
+    <div class="ext-title">أشخاص خارج الشجرة</div>
+    <div class="ext-sub">ليسوا من قريش أو من قريش ولم نُضف نسبهم للشجرة</div>
+    <div id="external-list"></div>
+  </div>
+</div>
+
+<aside id="side-panel">
+  <div class="panel-header-actions">
+    <button class="panel-btn" title="تصغير إلى زر عائم" onclick="minimizePanel()">⤵ تصغير</button>
+    <button class="panel-btn panel-btn-danger" title="إلغاء تحديد الشخصية" onclick="clearSelection()">✕ إلغاء</button>
+  </div>
+  <div id="panel-content"></div>
+</aside>
+
+<!-- FAB عائم للتوسيط (للموبايل فقط) -->
+<button id="reset-fab" onclick="centerTree()" style="display:none" title="إعادة توسيط الشجرة">↻</button>
+
+<!-- Peek Card: بطاقة سفلية سياقية على الموبايل — تظهر عند اختيار شخص -->
+<div id="peek-card" style="display:none">
+  <div class="peek-handle"></div>
+  <div class="peek-summary">
+    <div class="peek-title">
+      <span id="peek-name"></span>
+      <span id="peek-badge" class="peek-badge"></span>
+    </div>
+    <div class="peek-actions">
+      <button onclick="peekFocus()" id="peek-btn-focus" title="تركيز">🎯</button>
+      <button onclick="peekChildren()" title="أبناء">⬇️</button>
+      <button onclick="peekMother()" id="peek-btn-mother" title="خط الأم">🏠</button>
+      <button onclick="peekMarriage()" id="peek-btn-marriage" title="خط الزواج">💍</button>
+      <button onclick="peekExpand()" title="عرض التفاصيل">ℹ️</button>
+      <button onclick="clearSelection()" class="peek-btn-close" title="إلغاء">✕</button>
+    </div>
+  </div>
+  <div class="peek-details" id="peek-details"></div>
+</div>
+
+<!-- قائمة أوامر (Sheet) للموبايل — تفتح بزر ⋮ في الهيدر -->
+<div id="mobile-menu-sheet" style="display:none">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">أدوات الشجرة</div>
+  <div class="sheet-items">
+    <button onclick="mbProphet()">🕌 النبي ﷺ</button>
+    <button onclick="mbExpandCollapse()" id="mb-expand-collapse-btn">⇲ عرض الكل</button>
+    <button onclick="mbLang()" id="mb-lang-btn">🌐 عربي</button>
+    <button onclick="mbStyle()">🎨 النمط</button>
+    <button onclick="mbLegend()" id="mb-legend-btn">🗂️ المفتاح</button>
+    <button onclick="mbPrint()">🖨️ طباعة</button>
+  </div>
+</div>
+
+<div class="legend">
+  <button class="legend-close" onclick="hideLegend()" title="إخفاء المفتاح">✕</button>
+  <div class="legend-title">المفتاح</div>
+  <div class="legend-row"><span class="legend-dot" style="background:var(--prophet)"></span><span>النبي محمد ﷺ</span></div>
+  <div class="legend-row"><span class="legend-dot" style="background:var(--sahabi)"></span><span>صحابي</span></div>
+  <div class="legend-row"><span class="legend-dot" style="background:var(--kafir)"></span><span>من كفار قريش</span></div>
+  <div class="legend-row"><span class="legend-dot" style="background:var(--ancestor)"></span><span>جد من أجداد النبي</span></div>
+  <div class="legend-row"><span class="legend-dot" style="background:var(--mother)"></span><span>من أمهات المؤمنين</span></div>
+  <div class="legend-row"><span class="legend-dot" style="background:var(--neutral)"></span><span>أخرى</span></div>
+  <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--panel-2);">
+    <div class="legend-row"><span class="legend-line" style="background:var(--father-line)"></span><span>نسب الأب</span></div>
+    <div class="legend-row"><span class="legend-line" style="background:var(--mother-line)"></span><span>نسب الأم</span></div>
+    <div class="legend-row"><span class="legend-line" style="background:var(--wife-line)"></span><span>نسب الزوجة</span></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   البيانات — People of Quraish
+   ========================================================= */
+const PEOPLE = {
+  // ===== الأجداد (Backbone) =====
+  fihr: { id: 'fihr', nameAr: 'فِهْر (قريش)', nameEn: 'Fihr (Quraysh)', type: 'ancestor',
+    role: 'الجد الجامع لقبيلة قريش، ومنه أخذت القبيلة اسمها.', fatherId: null },
+  ghalib: { id: 'ghalib', nameAr: 'غالب', nameEn: 'Ghalib', type: 'ancestor', fatherId: 'fihr' },
+  luayy: { id: 'luayy', nameAr: 'لؤي', nameEn: "Lu'ayy", type: 'ancestor', fatherId: 'ghalib' },
+  kab: { id: 'kab', nameAr: 'كعب', nameEn: "Ka'b", type: 'ancestor', fatherId: 'luayy' },
+  murrah: { id: 'murrah', nameAr: 'مُرَّة', nameEn: 'Murrah', type: 'ancestor', fatherId: 'kab' },
+  kilab: { id: 'kilab', nameAr: 'كِلَاب', nameEn: 'Kilab', type: 'ancestor', fatherId: 'murrah' },
+
+  // إخوة كلاب (بنو مُرَّة) — لربط أبي بكر وأبي جهل وخالد بالشجرة
+  taym: { id: 'taym', nameAr: 'تَيْم بن مُرَّة', nameEn: 'Taym ibn Murrah', type: 'neutral', fatherId: 'murrah',
+    role: 'جدّ بني تيم، منه أبو بكر الصديق وطلحة بن عبيد الله رضي الله عنهما.' },
+  yaqza: { id: 'yaqza', nameAr: 'يَقَظَة بن مُرَّة', nameEn: 'Yaqza ibn Murrah', type: 'neutral', fatherId: 'murrah',
+    role: 'جدّ بني مخزوم، ومنهم الوليد بن المغيرة وأبو جهل وخالد بن الوليد.' },
+  makhzum: { id: 'makhzum', nameAr: 'مخزوم بن يَقَظَة', nameEn: 'Makhzum ibn Yaqza', type: 'neutral', fatherId: 'yaqza',
+    role: 'جدّ بني مخزوم، أعظم بطون قريش نفوذاً قبل الإسلام.' },
+
+  // إخوة كعب بن لؤي (أبناء لؤي) — لربط سودة أم المؤمنين وبني عامر
+  amir_luayy: { id: 'amir_luayy', nameAr: 'عامر بن لؤي', nameEn: 'Amir ibn Luayy', type: 'neutral', fatherId: 'luayy',
+    role: 'جدّ بني عامر بن لؤي، منهم سودة بنت زمعة أم المؤمنين وسهيل بن عمرو.' },
+  zamaa_amiri: { id: 'zamaa_amiri', nameAr: 'زمعة بن قيس', nameEn: "Zam'a ibn Qays", type: 'neutral', fatherId: 'amir_luayy',
+    role: 'من أشراف بني عامر بن لؤي، والد سودة أم المؤمنين (مع تلخيص عدة أجيال بين عامر وزمعة).' },
+
+  // إخوة كعب بن لؤي — لربط عمر وسعيد بن زيد
+  adiy: { id: 'adiy', nameAr: 'عَدِيّ بن كعب', nameEn: 'Adiy ibn Ka\'b', type: 'neutral', fatherId: 'kab',
+    role: 'جدّ بني عَدِيّ، منه عمر بن الخطاب وسعيد بن زيد رضي الله عنهما.' },
+  sahm_lineage: { id: 'sahm_lineage', nameAr: 'سهم بن عمرو', nameEn: 'Sahm ibn Amr', type: 'neutral', fatherId: 'kab',
+    role: 'جدّ بني سهم، منهم العاص بن وائل وابنه عمرو بن العاص (مع تلخيص جيل هصيص بن كعب).' },
+  al_as_wail: { id: 'al_as_wail', nameAr: 'العاص بن وائل', nameEn: "Al-'As ibn Wa'il", type: 'kafir', fatherId: 'sahm_lineage',
+    role: 'من كفار قريش ومن المستهزئين بالنبي ﷺ. والد عمرو بن العاص وهشام بن العاص. (مع تلخيص أجيال بين سهم والعاص).' },
+  nufayl: { id: 'nufayl', nameAr: 'نُفَيْل بن عدي', nameEn: 'Nufayl ibn Adiy', type: 'neutral', fatherId: 'adiy',
+    role: 'من أجداد عمر بن الخطاب وسعيد بن زيد (بتصرف وتلخيص عدة أجيال).' },
+  amr_nufayl: { id: 'amr_nufayl', nameAr: 'عَمْرو بن نُفَيْل', nameEn: 'Amr ibn Nufayl', type: 'neutral', fatherId: 'nufayl',
+    role: 'والد زيد بن عمرو الذي كان على الحنيفية قبل البعثة، وجدّ سعيد بن زيد.' },
+  qusayy: { id: 'qusayy', nameAr: 'قُصَيّ بن كلاب', nameEn: 'Qusayy ibn Kilab', type: 'ancestor', fatherId: 'kilab',
+    role: 'المؤسس الفعلي لكيان قريش في مكة ويُلقب بـ "المجمِّع". جمع القبائل المتفرقة وأرسى النظام السياسي والاجتماعي المكي، ووضع أسس القيادة التي اتسمت بنوع من التعددية، مما هيأ المناخ لظهور الدعوة لاحقًا.' },
+
+  // أبناء قصي
+  abd_manaf: { id: 'abd_manaf', nameAr: 'عبد مناف', nameEn: 'Abd Manaf', type: 'ancestor', fatherId: 'qusayy',
+    role: 'في عهده ومن خلال أبنائه الأربعة تأسست منظومة "الإيلاف" والعهود الدولية مع الروم والفرس والحبشة واليمن، مما حوّل مكة إلى قطب اقتصادي عالمي مهّد لانتشار الرسالة عبر هذه الطرق.' },
+  abd_shams: { id: 'abd_shams', nameAr: 'عبد شمس', nameEn: 'Abd Shams', type: 'neutral', fatherId: 'abd_manaf',
+    role: 'جدّ بني أمية، ومنه تفرع نسب عثمان بن عفان وأبي سفيان.' },
+  abd_uzza: { id: 'abd_uzza', nameAr: 'عبد العزى', nameEn: "Abd al-'Uzza", type: 'neutral', fatherId: 'qusayy',
+    role: 'جدّ خديجة بنت خويلد والزبير بن العوام رضي الله عنهما.' },
+
+  // بنو عبد مناف
+  hashim: { id: 'hashim', nameAr: 'هاشم', nameEn: 'Hashim', type: 'ancestor', fatherId: 'abd_manaf',
+    role: 'ارتبط اسمه بالريادة الاقتصادية، نظّم بشكل مؤسسي "رحلتي الشتاء والصيف". منح هذا التنظيم قبيلة النبي ثقلًا اقتصاديًا وسياسيًا كبيرًا، وأعطى بني هاشم وجاهةً سهّلت قبول العرب لرسالة النبي ﷺ.' },
+
+  // أخو عبد المطلب — جدّ لفاطمة بنت أسد (أم علي)
+  asad_hashim: { id: 'asad_hashim', nameAr: 'أسد بن هاشم', nameEn: 'Asad ibn Hashim', type: 'neutral', fatherId: 'hashim',
+    role: 'أخو عبد المطلب، جدّ فاطمة بنت أسد أم علي وجعفر وعقيل.' },
+
+  // بنو عبد شمس (يشمل عثمان وأبو سفيان)
+  umayyah: { id: 'umayyah', nameAr: 'أُميَّة', nameEn: 'Umayya', type: 'neutral', fatherId: 'abd_shams',
+    role: 'جدّ بني أمية.' },
+  abu_al_as: { id: 'abu_al_as', nameAr: 'أبو العاص بن أمية', nameEn: "Abu al-'As ibn Umayya", type: 'neutral', fatherId: 'umayyah' },
+  affan: { id: 'affan', nameAr: 'عفان بن أبي العاص', nameEn: "Affan ibn Abi al-'As", type: 'neutral', fatherId: 'abu_al_as' },
+  harb: { id: 'harb', nameAr: 'حَرْب بن أمية', nameEn: 'Harb ibn Umayya', type: 'neutral', fatherId: 'umayyah' },
+
+  // بنو عبد العزى (خديجة والزبير)
+  asad: { id: 'asad', nameAr: 'أسد بن عبد العزى', nameEn: "Asad ibn Abd al-'Uzza", type: 'neutral', fatherId: 'abd_uzza' },
+  khuwaylid: { id: 'khuwaylid', nameAr: 'خويلد بن أسد', nameEn: 'Khuwaylid ibn Asad', type: 'neutral', fatherId: 'asad',
+    role: 'والد خديجة أم المؤمنين وأخوها العوام وحزام.' },
+  al_awwam: { id: 'al_awwam', nameAr: 'العوّام بن خويلد', nameEn: 'Al-Awwam ibn Khuwaylid', type: 'neutral', fatherId: 'khuwaylid',
+    role: 'أخ خديجة بنت خويلد، ووالد الزبير الحواري.' },
+  hazm_khuwaylid: { id: 'hazm_khuwaylid', nameAr: 'حزام بن خويلد', nameEn: 'Hizam ibn Khuwaylid', type: 'neutral', fatherId: 'khuwaylid',
+    role: 'أخو خديجة والعوّام، ووالد حكيم بن حزام الصحابي.' },
+
+  // ===== عبد المطلب وأبناؤه =====
+  abd_al_muttalib: { id: 'abd_al_muttalib', nameAr: 'عبد المُطَّلب', nameEn: "Abd al-Muttalib", type: 'ancestor', fatherId: 'hashim',
+    role: 'صاحب الزعامة في مكة وقت حادثة الفيل، ومجدّد حفر بئر زمزم. كفل النبي ﷺ وربّاه، وهو من اختار له اسم "محمداً" ليكون محموداً في الأرض والسماء.' },
+
+  abdullah: { id: 'abdullah', nameAr: 'عبد الله بن عبد المطلب', nameEn: "Abdullah ibn Abd al-Muttalib", type: 'ancestor', fatherId: 'abd_al_muttalib',
+    role: 'والد النبي ﷺ. اشتهر بحادثة "الفداء" بمائة من الإبل، مما رفع من شأن بني هاشم. توفي قبل مولد النبي ﷺ.',
+    wivesIds: ['amina'] },
+
+  abu_talib: { id: 'abu_talib', nameAr: 'أبو طالب (عبد مناف)', nameEn: 'Abu Talib', type: 'neutral', fatherId: 'abd_al_muttalib',
+    wivesIds: ['fatima_asad'],
+    role: 'عم النبي ﷺ الذي كفله بعد وفاة جده عبد المطلب، وحاماه حتى آخر حياته ضدّ قريش، لكنه لم يُظهر الإسلام.' },
+
+  // فاطمة بنت أسد — زوجة أبي طالب وأم علي وجعفر وعقيل
+  fatima_asad: { id: 'fatima_asad', nameAr: 'فاطمة بنت أسد', nameEn: 'Fatima bint Asad', type: 'sahabi', gender: 'f', fatherId: 'asad_hashim',
+    role: 'زوجة أبي طالب، وأم علي وجعفر وعقيل. أول هاشمية ولدت لهاشمي. كفلت النبي ﷺ بعد وفاة أمه. لمّا توفيت دخل النبي في قبرها وقال: "كانت من أبر الناس بي بعد أمي".' },
+
+  hamza: { id: 'hamza', nameAr: 'حمزة بن عبد المطلب', nameEn: 'Hamza ibn Abd al-Muttalib', type: 'sahabi', fatherId: 'abd_al_muttalib',
+    role: 'أسد الله وأسد رسوله، عمّ النبي ﷺ وأخوه من الرضاعة. أسلم في السنة السادسة من البعثة فأعزّ الله به الإسلام. استُشهد يوم أُحُد وسمّاه النبي ﷺ "سيد الشهداء".' },
+
+  al_abbas: { id: 'al_abbas', nameAr: 'العباس بن عبد المطلب', nameEn: 'Al-Abbas ibn Abd al-Muttalib', type: 'sahabi', fatherId: 'abd_al_muttalib',
+    role: 'عم النبي ﷺ. أسلم قبل الهجرة وكتم إسلامه بأمر النبي ﷺ ليكون عينًا له في مكة. جدّ الخلفاء العباسيين.' },
+
+  abu_lahab: { id: 'abu_lahab', nameAr: 'أبو لهب (عبد العزى)', nameEn: 'Abu Lahab', type: 'kafir', fatherId: 'abd_al_muttalib',
+    role: 'عم النبي ﷺ، وأشدّ قومه عداوةً له. نزلت فيه سورة المسد. مات كمدًا بعد وقعة بدر بأيام.' },
+
+  al_harith_ibn_am: { id: 'al_harith_ibn_am', nameAr: 'الحارث بن عبد المطلب', nameEn: 'Al-Harith ibn Abd al-Muttalib', type: 'neutral', fatherId: 'abd_al_muttalib',
+    role: 'أكبر أبناء عبد المطلب، ومات قبل البعثة.' },
+
+  // عمات النبي ﷺ (بنات عبد المطلب)
+  safiyyah_aunt: { id: 'safiyyah_aunt', nameAr: 'صفية بنت عبد المطلب', nameEn: 'Safiyyah bint Abd al-Muttalib', type: 'sahabi', gender: 'f', fatherId: 'abd_al_muttalib',
+    role: 'عمة النبي ﷺ. أسلمت وهاجرت. شاركت في الدفاع يوم الخندق وقتلت يهوديًا حاول التسلّل. أم الزبير بن العوام.' },
+
+  arwa_aunt: { id: 'arwa_aunt', nameAr: 'أروى بنت عبد المطلب', nameEn: 'Arwa bint Abd al-Muttalib', type: 'sahabi', gender: 'f', fatherId: 'abd_al_muttalib',
+    role: 'عمة النبي ﷺ. أسلمت وهاجرت إلى المدينة.' },
+
+  // والدة النبي ﷺ (من بطن زهرة)
+  zuhrah: { id: 'zuhrah', nameAr: 'زهرة بن كلاب', nameEn: 'Zuhrah ibn Kilab', type: 'neutral', fatherId: 'kilab',
+    role: 'أخو قصي بن كلاب، جدّ أمهات في قريش.' },
+  abd_manaf_zuhri: { id: 'abd_manaf_zuhri', nameAr: 'عبد مناف بن زهرة', nameEn: 'Abd Manaf ibn Zuhrah', type: 'neutral', fatherId: 'zuhrah' },
+  wahb: { id: 'wahb', nameAr: 'وهب بن عبد مناف', nameEn: 'Wahb ibn Abd Manaf', type: 'neutral', fatherId: 'abd_manaf_zuhri',
+    role: 'والد آمنة أم النبي ﷺ. كان سيّدًا في بني زهرة.' },
+  amina: { id: 'amina', nameAr: 'آمنة بنت وهب', nameEn: 'Amina bint Wahb', type: 'neutral', gender: 'f', fatherId: 'wahb',
+    role: 'أم النبي محمد ﷺ. تزوجها عبد الله بن عبد المطلب، وتوفيت وعمر النبي ست سنوات في الأبواء.' },
+
+  uhayb: { id: 'uhayb', nameAr: 'أهيب بن عبد مناف', nameEn: 'Uhayb ibn Abd Manaf', type: 'neutral', fatherId: 'abd_manaf_zuhri' },
+  abu_waqqas: { id: 'abu_waqqas', nameAr: 'أبو وقاص (مالك)', nameEn: 'Abu Waqqas (Malik)', type: 'neutral', fatherId: 'uhayb' },
+
+  // ===== النبي محمد ﷺ =====
+  muhammad: { id: 'muhammad', nameAr: 'محمد رسول الله ﷺ', nameEn: 'Muhammad the Messenger of Allah ﷺ', type: 'prophet', fatherId: 'abdullah',
+    role: 'خاتم الأنبياء والمرسلين، صاحب الرسالة الخاتمة. وُلد عام الفيل (570م تقريبًا) ورُبّي في بني سعد، وأُرسل للناس كافة. هاجر إلى المدينة سنة 622م مؤسسًا الدولة الإسلامية. توفي سنة 11هـ (632م).',
+    motherId: 'amina',
+    wivesIds: ['khadija', 'sawda', 'aisha', 'hafsa', 'zaynab_khuz', 'umm_salama', 'zaynab_jahsh', 'juwayriya', 'umm_habiba', 'safiyyah_wife', 'maymuna'] },
+
+  // ===== أبناء النبي ﷺ =====
+  // ===== أبناء النبي محمد ﷺ =====
+
+  // الذكور (القاسم، عبد الله، إبراهيم) — جميعهم توفوا صغاراً
+  al_qasim: { id: 'al_qasim', nameAr: 'القاسم بن رسول الله ﷺ', nameEn: 'Al-Qasim ibn Muhammad ﷺ', type: 'sahabi', fatherId: 'muhammad', motherId: 'khadija',
+    role: 'أكبر أبناء النبي ﷺ، وبه كان يُكنى "أبو القاسم". وُلد قبل البعثة وتوفي صغيراً في مكة.' },
+  abdullah_son: { id: 'abdullah_son', nameAr: 'عبد الله (الطاهر الطيّب) بن رسول الله ﷺ', nameEn: 'Abdullah ibn Muhammad ﷺ', type: 'sahabi', fatherId: 'muhammad', motherId: 'khadija',
+    role: 'ابن النبي ﷺ من خديجة. وُلد بعد البعثة فلُقّب بـ"الطيّب" و"الطاهر" لأنه وُلد في الإسلام. توفي صغيراً في مكة.' },
+  ibrahim_son: { id: 'ibrahim_son', nameAr: 'إبراهيم بن رسول الله ﷺ', nameEn: 'Ibrahim ibn Muhammad ﷺ', type: 'sahabi', fatherId: 'muhammad',
+    motherName: 'مارية القبطية',
+    motherOrigin: 'من مصر — أهدتها المقوقس للنبي ﷺ',
+    role: 'آخر أبناء النبي ﷺ. وُلد في المدينة من مارية القبطية سنة 8هـ وتوفي رضيعاً ابن 18 شهراً. قال فيه النبي ﷺ: "إن له مرضعاً في الجنة تتم رضاعه".' },
+
+  // البنات (زينب، رقية، أم كلثوم، فاطمة)
+  zaynab_muhammad: { id: 'zaynab_muhammad', nameAr: 'زينب بنت رسول الله ﷺ', nameEn: 'Zaynab bint Muhammad ﷺ', type: 'sahabi', gender: 'f', fatherId: 'muhammad', motherId: 'khadija',
+    role: 'أكبر بنات النبي ﷺ. تزوجت ابن خالتها أبا العاص بن الربيع (ابن أختها هالة بنت خويلد)، وأنجبت له عليّاً وأُمامة. هاجرت إلى المدينة بعد بدر بعد أن أسلم زوجها. توفيت سنة 8هـ.' },
+  ruqayyah: { id: 'ruqayyah', nameAr: 'رقية بنت رسول الله ﷺ', nameEn: 'Ruqayya bint Muhammad ﷺ', type: 'sahabi', gender: 'f', fatherId: 'muhammad', motherId: 'khadija',
+    role: 'بنت النبي ﷺ من خديجة. تزوجها عثمان بن عفان، وهاجرت معه هجرتي الحبشة ثم المدينة. توفيت يوم بدر، فتخلّف عنها عثمان بإذن النبي ﷺ.' },
+  umm_kulthum_prophet: { id: 'umm_kulthum_prophet', nameAr: 'أم كلثوم بنت رسول الله ﷺ', nameEn: 'Umm Kulthum bint Muhammad ﷺ', type: 'sahabi', gender: 'f', fatherId: 'muhammad', motherId: 'khadija',
+    role: 'بنت النبي ﷺ من خديجة. تزوجها عثمان بن عفان بعد وفاة أختها رقية، فلُقّب عثمان "ذو النورين". توفيت سنة 9هـ.' },
+  fatima: { id: 'fatima', nameAr: 'فاطمة الزهراء', nameEn: 'Fatima al-Zahra', type: 'sahabi', gender: 'f', fatherId: 'muhammad',
+    role: 'سيدة نساء أهل الجنة، أصغر بنات النبي ﷺ من خديجة. زوجة علي بن أبي طالب وأم الحسن والحسين. توفيت بعد النبي ﷺ بستة أشهر.',
+    motherId: 'khadija' },
+
+  // ===== أمهات المؤمنين (rank حسب ترتيب الأفضلية المشهور) =====
+  khadija: { id: 'khadija', nameAr: 'خديجة بنت خويلد', nameEn: 'Khadija bint Khuwaylid', type: 'mother', gender: 'f', rank: 1, fatherId: 'khuwaylid',
+    role: 'أم المؤمنين، أول زوجات النبي ﷺ وأول من آمن به. كانت تاجرة صاحبة مال وشرف في قريش. عاش النبي معها 25 سنة لم يتزوج عليها. توفيت قبل الهجرة بعام الحزن.' },
+
+  aisha: { id: 'aisha', nameAr: 'عائشة الصديقة', nameEn: "A'isha al-Siddiqa", type: 'mother', gender: 'f', rank: 2, fatherId: 'abu_bakr',
+    role: 'أم المؤمنين، بنت أبي بكر الصديق. أحبّ الناس إلى النبي ﷺ. أفقه نساء الأمة وأروى الصحابة عن النبي ﷺ. توفيت سنة 58هـ.' },
+
+  sawda: { id: 'sawda', nameAr: 'سودة بنت زمعة', nameEn: "Sawda bint Zam'a", type: 'mother', gender: 'f', rank: 3, fatherId: 'zamaa_amiri',
+    role: 'أم المؤمنين. تزوجها النبي ﷺ بعد خديجة، وكانت أول من تزوجها بعدها. من بني عامر بن لؤي القرشيين.' },
+
+  hafsa: { id: 'hafsa', nameAr: 'حفصة بنت عمر', nameEn: 'Hafsa bint Umar', type: 'mother', gender: 'f', rank: 4, fatherId: 'umar',
+    role: 'أم المؤمنين، بنت عمر بن الخطاب. حُفظ عندها المصحف الذي جمعه أبو بكر.' },
+
+  zaynab_khuz: { id: 'zaynab_khuz', nameAr: 'زينب بنت خُزَيْمَة', nameEn: 'Zaynab bint Khuzayma', type: 'mother', gender: 'f', rank: 5, fatherId: null,
+    origin: 'عربية من غير قريش — من بني هلال بن عامر',
+    role: 'أم المؤمنين، لُقّبت بـ"أم المساكين" لكثرة إطعامها لهم. توفيت في حياة النبي ﷺ.' },
+
+  umm_salama: { id: 'umm_salama', nameAr: 'أم سلمة (هند بنت أبي أمية)', nameEn: 'Umm Salama', type: 'mother', gender: 'f', rank: 6, fatherId: 'abu_umayya_makhzumi',
+    role: 'أم المؤمنين، من بني مخزوم القرشيين (ابنة عم خالد بن الوليد). أشارت على النبي ﷺ يوم الحديبية بالرأي السديد حين أمر الصحابة بالتحلل ففعل هو أولًا فاتبعوه. آخر أمهات المؤمنين وفاة (سنة 61هـ).' },
+
+  zaynab_jahsh: { id: 'zaynab_jahsh', nameAr: 'زينب بنت جحش', nameEn: 'Zaynab bint Jahsh', type: 'mother', gender: 'f', rank: 7, fatherId: null,
+    origin: 'عربية من غير قريش — من بني أسد بن خزيمة (وأمها أميمة بنت عبد المطلب عمة النبي ﷺ)',
+    role: 'أم المؤمنين، ابنة عمة النبي ﷺ (أميمة بنت عبد المطلب). نزل في زواجها منه قرآن يُتلى.' },
+
+  juwayriya: { id: 'juwayriya', nameAr: 'جويرية بنت الحارث', nameEn: 'Juwayriyya bint al-Harith', type: 'mother', gender: 'f', rank: 8, fatherId: null,
+    origin: 'عربية من غير قريش — من بني المصطلق من خزاعة',
+    role: 'أم المؤمنين. بزواج النبي ﷺ منها أعتق الصحابة مئة أهل بيت من سبي بني المصطلق.' },
+
+  umm_habiba: { id: 'umm_habiba', nameAr: 'أم حبيبة (رملة بنت أبي سفيان)', nameEn: 'Umm Habiba (Ramla)', type: 'mother', gender: 'f', rank: 9, fatherId: 'abu_sufyan',
+    role: 'أم المؤمنين، بنت أبي سفيان. أسلمت وهاجرت مع زوجها إلى الحبشة، ثم تزوجها النبي ﷺ بعد وفاة زوجها.' },
+
+  safiyyah_wife: { id: 'safiyyah_wife', nameAr: 'صفية بنت حُيَيّ', nameEn: 'Safiyyah bint Huyayy', type: 'mother', gender: 'f', rank: 10, fatherId: null,
+    origin: 'من بني إسرائيل — من بني النضير، ومن ذرية هارون عليه السلام',
+    role: 'أم المؤمنين، من ذرية هارون عليه السلام. سُبيت يوم خيبر فأسلمت وأعتقها النبي ﷺ وجعل عتقها صداقها.' },
+
+  maymuna: { id: 'maymuna', nameAr: 'ميمونة بنت الحارث', nameEn: 'Maymuna bint al-Harith', type: 'mother', gender: 'f', rank: 11, fatherId: null,
+    origin: 'عربية من غير قريش — من بني هلال بن عامر',
+    role: 'أم المؤمنين. آخر من تزوج النبي ﷺ. خالة ابن عباس وخالد بن الوليد.' },
+
+  // ===== العشرة المبشرون بالجنة =====
+  // 1. أبو بكر الصديق
+  abu_quhafa: { id: 'abu_quhafa', nameAr: 'أبو قحافة (عثمان)', nameEn: 'Abu Quhafa', type: 'sahabi', fatherId: 'taym', role: 'والد أبي بكر الصديق. أسلم يوم الفتح. (مع تلخيص أجيال سعد وكعب وعمرو وعامر بين تيم وأبي قحافة).' },
+  abu_bakr: { id: 'abu_bakr', nameAr: 'أبو بكر الصديق', nameEn: 'Abu Bakr al-Siddiq', type: 'sahabi', rank: 1, fatherId: 'abu_quhafa',
+    motherName: 'أم الخير سلمى بنت صخر',
+    motherOrigin: 'من بني تيم — قرشية',
+    role: 'أول الخلفاء الراشدين، وأول من آمن من الرجال الأحرار. رفيق النبي ﷺ في الغار. قاد حروب الردة وبدأ الفتوحات. يلتقي نسبه مع النبي ﷺ عند مرة بن كعب (الجد السابع).' },
+
+  // 2. عمر بن الخطاب
+  al_khattab: { id: 'al_khattab', nameAr: 'الخطاب بن نُفَيل', nameEn: 'Al-Khattab ibn Nufayl', type: 'neutral', fatherId: 'nufayl' },
+  umar: { id: 'umar', nameAr: 'عمر بن الخطاب', nameEn: 'Umar ibn al-Khattab', type: 'sahabi', rank: 2, fatherId: 'al_khattab',
+    wivesIds: ['umm_kulthum_ali'],
+    motherName: 'حنتمة بنت هاشم بن المغيرة',
+    motherOrigin: 'من بني مخزوم — قرشية (ابنة عم أبي جهل)',
+    role: 'الخليفة الثاني الفاروق، الذي أعزّ الله به الإسلام. فتح الشام والعراق ومصر وأنشأ الدواوين والتاريخ الهجري. استُشهد سنة 23هـ. يلتقي نسبه مع النبي ﷺ عند كعب بن لؤي (الجد الثامن).' },
+
+  // 3. عثمان بن عفان
+  uthman: { id: 'uthman', nameAr: 'عثمان بن عفان (ذو النورين)', nameEn: 'Uthman ibn Affan', type: 'sahabi', rank: 3, fatherId: 'affan',
+    wivesIds: ['ruqayyah', 'umm_kulthum_prophet'],
+    motherName: 'أروى بنت كريز',
+    motherOrigin: 'من بني عبد شمس (أمها البيضاء بنت عبد المطلب عمة النبي ﷺ)',
+    role: 'الخليفة الثالث، ذو النورين لزواجه ببنتي النبي ﷺ (رقية ثم أم كلثوم). جمع المصحف على حرف واحد. استُشهد سنة 35هـ. من بني أمية، يلتقي نسبه مع النبي ﷺ عند عبد مناف (الجد الرابع).' },
+
+  // 4. علي بن أبي طالب
+  ali: { id: 'ali', nameAr: 'علي بن أبي طالب', nameEn: 'Ali ibn Abi Talib', type: 'sahabi', rank: 4, fatherId: 'abu_talib',
+    wivesIds: ['fatima'],
+    motherId: 'fatima_asad',
+    role: 'الخليفة الرابع، ابن عم النبي ﷺ وزوج ابنته فاطمة. أول من أسلم من الصبيان. من أشجع الصحابة. استُشهد سنة 40هـ.' },
+
+  // إخوة علي بن أبي طالب (أبناء أبي طالب وفاطمة بنت أسد)
+  jafar: { id: 'jafar', nameAr: 'جعفر بن أبي طالب (الطيّار)', nameEn: 'Ja\'far ibn Abi Talib', type: 'sahabi', fatherId: 'abu_talib',
+    motherId: 'fatima_asad',
+    role: 'أخو علي، من السابقين إلى الإسلام. هاجر إلى الحبشة وكان متحدث المسلمين عند النجاشي. استُشهد في غزوة مؤتة سنة 8هـ بعد أن حمل الراية فقُطعت يداه، فأبدله الله جناحين يطير بهما في الجنة، فلُقّب "الطيّار".' },
+  aqeel: { id: 'aqeel', nameAr: 'عقيل بن أبي طالب', nameEn: 'Aqil ibn Abi Talib', type: 'sahabi', fatherId: 'abu_talib',
+    motherId: 'fatima_asad',
+    role: 'أكبر إخوة علي. أُسر يوم بدر مع المشركين ثم افتداه عمه العباس، وأسلم قبل الحديبية. كان أعلم قريش بأنسابها وأيامها.' },
+
+  // 5. طلحة بن عبيد الله
+  ubaydallah_talha: { id: 'ubaydallah_talha', nameAr: 'عبيد الله بن عثمان', nameEn: 'Ubaydallah ibn Uthman', type: 'neutral', fatherId: 'taym',
+    role: 'والد طلحة بن عبيد الله. (مع تلخيص أجيال بين تيم وعبيد الله).' },
+  talha: { id: 'talha', nameAr: 'طلحة بن عبيد الله', nameEn: 'Talha ibn Ubaydallah', type: 'sahabi', rank: 5, fatherId: 'ubaydallah_talha',
+    role: 'من العشرة المبشرين بالجنة. وقى النبي ﷺ بيده يوم أُحد فشُلّت. من بني تيم (نفس بطن أبي بكر). استُشهد يوم الجمل سنة 36هـ.' },
+
+  // 6. الزبير بن العوام
+  zubayr: { id: 'zubayr', nameAr: 'الزبير بن العوام (حواري النبي)', nameEn: 'Al-Zubayr ibn al-Awwam', type: 'sahabi', rank: 6, fatherId: 'al_awwam',
+    role: 'حواري رسول الله ﷺ، ومن العشرة المبشرين بالجنة. ابن صفية عمة النبي ﷺ، وابن أخ خديجة أم المؤمنين. أول من سلّ سيفه في الإسلام. استُشهد سنة 36هـ.',
+    motherId: 'safiyyah_aunt',
+    wivesIds: ['asma'] },
+
+  // 7. سعد بن أبي وقاص
+  sad: { id: 'sad', nameAr: 'سعد بن أبي وقاص', nameEn: "Sa'd ibn Abi Waqqas", type: 'sahabi', rank: 8, fatherId: 'abu_waqqas',
+    role: 'فاتح العراق وقائد القادسية، وأول من رمى بسهم في سبيل الله. من العشرة المبشرين. خال النبي ﷺ من بني زهرة. آخر العشرة وفاة.' },
+
+  // 8. سعيد بن زيد
+  zayd_ibn_amr: { id: 'zayd_ibn_amr', nameAr: 'زيد بن عمرو', nameEn: "Zayd ibn 'Amr", type: 'neutral', fatherId: 'amr_nufayl',
+    role: 'كان على الحنيفية قبل البعثة، مات قبل بعثة النبي ﷺ. ابن عم الخطاب والد عمر.' },
+  said: { id: 'said', nameAr: 'سعيد بن زيد', nameEn: 'Said ibn Zayd', type: 'sahabi', rank: 9, fatherId: 'zayd_ibn_amr',
+    role: 'من العشرة المبشرين بالجنة. كان إسلامه سببًا في إسلام عمر بن الخطاب (كان زوج أخته فاطمة بنت الخطاب). من بني عدي (بطن عمر).' },
+
+  // 9. عبد الرحمن بن عوف
+  awf: { id: 'awf', nameAr: 'عوف بن عبد عوف', nameEn: 'Awf ibn Abd Awf', type: 'neutral', fatherId: null },
+  abd_ar_rahman: { id: 'abd_ar_rahman', nameAr: 'عبد الرحمن بن عوف', nameEn: 'Abd al-Rahman ibn Awf', type: 'sahabi', rank: 7, fatherId: 'awf',
+    role: 'من السابقين الأولين، ومن العشرة المبشرين. تاجر كبير أنفق أمواله في سبيل الله. من بني زهرة.' },
+
+  // 10. أبو عبيدة بن الجراح
+  al_jarrah: { id: 'al_jarrah', nameAr: 'عبد الله بن الجراح', nameEn: 'Abdullah ibn al-Jarrah', type: 'neutral', fatherId: null },
+  abu_ubayda: { id: 'abu_ubayda', nameAr: 'أبو عبيدة بن الجراح', nameEn: "Abu 'Ubayda ibn al-Jarrah", type: 'sahabi', rank: 10, fatherId: 'al_jarrah',
+    role: 'أمين هذه الأمة كما لقّبه النبي ﷺ. من العشرة المبشرين. فاتح الشام. توفي في طاعون عمواس سنة 18هـ.' },
+
+  // ===== زعماء كفار قريش =====
+  al_mughira: { id: 'al_mughira', nameAr: 'المغيرة بن عبد الله', nameEn: 'Al-Mughira ibn Abdullah', type: 'neutral', fatherId: 'makhzum',
+    role: 'من أشراف بني مخزوم، والد الوليد وهشام وأبي أمية. (مع تلخيص أجيال بين مخزوم والمغيرة).' },
+  hisham_makhzumi: { id: 'hisham_makhzumi', nameAr: 'هشام بن المغيرة', nameEn: 'Hisham ibn al-Mughira', type: 'neutral', fatherId: 'al_mughira',
+    role: 'من زعماء قريش، ووالد أبي جهل.' },
+  abu_umayya_makhzumi: { id: 'abu_umayya_makhzumi', nameAr: 'أبو أمية (حذيفة) بن المغيرة', nameEn: 'Abu Umayya ibn al-Mughira', type: 'neutral', fatherId: 'al_mughira',
+    role: 'من سادات قريش الكبار، كان يُلقب "زاد الراكب" لكرمه الشديد في أسفاره. أخو الوليد بن المغيرة، ووالد أم سلمة أم المؤمنين.' },
+  abu_jahl: { id: 'abu_jahl', nameAr: 'أبو جهل (عمرو بن هشام)', nameEn: 'Abu Jahl (Amr ibn Hisham)', type: 'kafir', fatherId: 'hisham_makhzumi',
+    role: 'فرعون هذه الأمة، ومن أشد أعداء النبي ﷺ في مكة. قاد قريشًا إلى بدر وقُتل فيها. من بني مخزوم.' },
+
+  al_walid: { id: 'al_walid', nameAr: 'الوليد بن المغيرة', nameEn: 'Al-Walid ibn al-Mughira', type: 'kafir', fatherId: 'al_mughira',
+    role: 'أحد زعماء قريش الأربعة، ومن أغنى أهل مكة. نزلت فيه آيات "ذرني ومن خلقت وحيدا". والد خالد بن الوليد.' },
+
+  khalid: { id: 'khalid', nameAr: 'خالد بن الوليد (سيف الله)', nameEn: 'Khalid ibn al-Walid', type: 'sahabi', fatherId: 'al_walid',
+    role: 'سيف الله المسلول. هزم المسلمين يوم أُحد ثم أسلم قبل الفتح. قاد حروب الردة وفتح العراق والشام. لم يهزم له جيش قط.' },
+
+  abu_sufyan: { id: 'abu_sufyan', nameAr: 'أبو سفيان (صخر بن حرب)', nameEn: 'Abu Sufyan (Sakhr ibn Harb)', type: 'sahabi', fatherId: 'harb',
+    wivesIds: ['hind'],
+    role: 'من زعماء قريش قبل الإسلام. قاد جيوش قريش في أُحد والخندق. أسلم يوم فتح مكة. والد معاوية وأم حبيبة أم المؤمنين.' },
+
+  // هند بنت عتبة — زوجة أبي سفيان وأم معاوية
+  hind: { id: 'hind', nameAr: 'هند بنت عتبة', nameEn: 'Hind bint Utbah', type: 'sahabi', gender: 'f', fatherId: 'utbah',
+    role: 'زوجة أبي سفيان وأم معاوية. كانت من شديدات العداء للمسلمين قبل الإسلام (مثّلت بجثة حمزة يوم أُحد)، ثم أسلمت يوم فتح مكة وبايعت النبي ﷺ.' },
+
+  // معاوية بن أبي سفيان
+  muawiyah: { id: 'muawiyah', nameAr: 'معاوية بن أبي سفيان', nameEn: 'Mu\'awiya ibn Abi Sufyan', type: 'sahabi', fatherId: 'abu_sufyan',
+    motherId: 'hind',
+    role: 'كاتب الوحي للنبي ﷺ. أسلم يوم فتح مكة. ولي الشام في خلافة عمر وعثمان، ثم أصبح أول خلفاء بني أمية سنة 41هـ فيما عُرف بـ"عام الجماعة". دامت خلافته نحو 20 سنة.' },
+
+  // عمرو بن العاص
+  amr_as: { id: 'amr_as', nameAr: 'عمرو بن العاص', nameEn: 'Amr ibn al-As', type: 'sahabi', fatherId: 'al_as_wail',
+    role: 'فاتح مصر، وأحد دهاة العرب الأربعة. أسلم قبل فتح مكة في سنة 8هـ مع خالد بن الوليد وعثمان بن طلحة. أمّره النبي ﷺ على عدد من السرايا ووَلاّه عمر فتح مصر.' },
+
+  // حكيم بن حزام — ابن أخي خديجة
+  hakim_hazm: { id: 'hakim_hazm', nameAr: 'حكيم بن حزام', nameEn: 'Hakim ibn Hizam', type: 'sahabi', fatherId: 'hazm_khuwaylid',
+    role: 'ابن أخي خديجة أم المؤمنين. وُلد في جوف الكعبة (لم يُولد أحد فيها سواه). أسلم يوم الفتح وحسن إسلامه. عُرف بالسخاء والكرم. عاش 120 سنة (60 في الجاهلية و60 في الإسلام).' },
+
+  umayyah_khalaf: { id: 'umayyah_khalaf', nameAr: 'أمية بن خلف', nameEn: 'Umayya ibn Khalaf', type: 'kafir', fatherId: null,
+    role: 'من أشد أعداء النبي ﷺ وسادة قريش. كان يعذّب بلالًا رضي الله عنه. قُتل يوم بدر على يد بلال وغيره.' },
+
+  utbah: { id: 'utbah', nameAr: 'عتبة بن ربيعة', nameEn: "Utba ibn Rabi'a", type: 'kafir', fatherId: null,
+    role: 'من سادة قريش. عرض على النبي ﷺ المال والسلطان ليترك الدعوة، فلم يقبل. قُتل يوم بدر. والد هند أم معاوية.' },
+
+  uqba: { id: 'uqba', nameAr: 'عقبة بن أبي مُعَيْط', nameEn: "Uqba ibn Abi Mu'ayt", type: 'kafir', fatherId: null,
+    role: 'من أشد أعداء النبي ﷺ أذى. وضع سلا الجزور على ظهره وهو يصلي. أُسر يوم بدر وأمر النبي ﷺ بقتله.' },
+
+  // أبناء الزبير (مثال لقرابة الأم)
+  abdullah_zubayr: { id: 'abdullah_zubayr', nameAr: 'عبد الله بن الزبير', nameEn: 'Abdullah ibn al-Zubayr', type: 'sahabi', fatherId: 'zubayr',
+    role: 'أول مولود للمهاجرين في المدينة. خليفة المسلمين في الحجاز سنة 64هـ. أمه أسماء بنت أبي بكر، وجدته لأمه صفية بنت عبد المطلب. استُشهد سنة 73هـ.',
+    motherId: 'asma' },
+
+  asma: { id: 'asma', nameAr: 'أسماء بنت أبي بكر (ذات النطاقين)', nameEn: 'Asma bint Abi Bakr', type: 'sahabi', gender: 'f', fatherId: 'abu_bakr',
+    role: 'ذات النطاقين. حملت الطعام للنبي ﷺ وأبيها في الغار. زوجة الزبير وأم عبد الله بن الزبير. آخر المهاجرات وفاة.' },
+
+  // الحسن والحسين
+  hasan: { id: 'hasan', nameAr: 'الحسن بن علي', nameEn: 'Al-Hasan ibn Ali', type: 'sahabi', fatherId: 'ali',
+    role: 'سبط النبي ﷺ وريحانته. خامس الخلفاء الراشدين. تنازل عن الخلافة لمعاوية حقنًا لدماء المسلمين ("عام الجماعة" 41هـ).',
+    motherId: 'fatima' },
+  husayn: { id: 'husayn', nameAr: 'الحسين بن علي', nameEn: 'Al-Husayn ibn Ali', type: 'sahabi', fatherId: 'ali',
+    role: 'سبط النبي ﷺ وسيد شباب أهل الجنة. استُشهد في كربلاء سنة 61هـ.',
+    motherId: 'fatima' },
+
+  // أم كلثوم بنت علي — حفيدة النبي ﷺ، زوجة عمر بن الخطاب
+  umm_kulthum_ali: { id: 'umm_kulthum_ali', nameAr: 'أم كلثوم بنت علي', nameEn: 'Umm Kulthum bint Ali', type: 'sahabi', gender: 'f', fatherId: 'ali', motherId: 'fatima',
+    role: 'بنت علي وفاطمة، وحفيدة النبي ﷺ. تزوجها أمير المؤمنين عمر بن الخطاب، فأراد بذلك الاتصال بأهل بيت النبي ﷺ.' }
+};
+
+// ربط العلاقات العكسية (الزوجات والأبناء والأمهات)
+function buildRelations() {
+  // children from fatherId
+  Object.values(PEOPLE).forEach(p => p.childrenIds = []);
+  Object.values(PEOPLE).forEach(p => {
+    if (p.fatherId && PEOPLE[p.fatherId]) {
+      PEOPLE[p.fatherId].childrenIds.push(p.id);
+    }
+  });
+}
+buildRelations();
+
+/* =========================================================
+   بناء الهرم الشجري - hierarchical for D3
+   Root = Fihr, then follow childrenIds where child exists in PEOPLE
+   ========================================================= */
+function buildHierarchy(rootId) {
+  const visited = new Set();
+  function rec(id) {
+    if (visited.has(id)) return null;
+    visited.add(id);
+    const p = PEOPLE[id];
+    if (!p) return null;
+    const node = { id, name: p.nameAr, data: p, children: [] };
+    (p.childrenIds || []).forEach(cid => {
+      const c = rec(cid);
+      if (c) node.children.push(c);
+    });
+    return node;
+  }
+  return rec(rootId);
+}
+
+// الجذر هو فهر مباشرة (بدون عقدة "قريش الأصل" الافتراضية)
+const rootData = buildHierarchy('fihr');
+
+/* =========================================================
+   رسم الشجرة بـ D3
+   ========================================================= */
+const svg = d3.select('#tree');
+const container = document.getElementById('svg-container');
+let width = container.clientWidth;
+let height = container.clientHeight;
+
+const g = svg.append('g');
+const linkGroup = g.append('g').attr('class', 'links');
+const relationGroup = g.append('g').attr('class', 'relations');
+// marriageGroup تحت nodeGroup ليظهر خلف المربعات
+const marriageGroup = g.append('g').attr('class', 'marriages');
+const nodeGroup = g.append('g').attr('class', 'nodes');
+
+const zoom = d3.zoom()
+  .scaleExtent([0.2, 3])
+  .filter((event) => {
+    // ارفض الضغط على زر التوسع/الطي حتى لا يتداخل مع النقر عليه
+    if (event.target && event.target.closest && event.target.closest('.toggle-btn')) return false;
+    // ارفض الزر الأيمن للماوس فقط (اسمح بالأيسر = التحريك)
+    if (event.type === 'mousedown' && event.button === 2) return false;
+    // ارفض wheel مع ctrl (حتى لا يتداخل مع زوم الصفحة)
+    if (event.type === 'wheel' && event.ctrlKey) return false;
+    // اقبل كل أنواع الأحداث الأخرى: mouse left, touch, pointer
+    return true;
+  })
+  .on('zoom', (event) => g.attr('transform', event.transform));
+svg.call(zoom)
+   .on('dblclick.zoom', null);
+
+// دعم touch على الموبايل
+const svgEl = svg.node();
+svgEl.style.touchAction = 'none';        // d3.zoom يلتقط كل إيماءات اللمس على الـ svg
+svgEl.style.userSelect = 'none';
+svgEl.style.webkitUserSelect = 'none';
+svgEl.style.webkitTapHighlightColor = 'transparent';
+// منع القائمة السياقية عند الضغط المطوّل (تتداخل مع الـ touch events)
+svgEl.addEventListener('contextmenu', (e) => e.preventDefault());
+// منع pull-to-refresh على الموبايل
+document.body.style.overscrollBehavior = 'none';
+
+// حجم البطاقة الافتراضي (يُضبط ديناميكيًا لكل عقدة حسب طول الاسم)
+const NODE_W = 240;
+const NODE_H = 84;
+const NODE_W_MAX = 360;
+
+// اللغة المعروضة على عقد الشجرة: 'ar' عربي فقط، 'en' إنجليزي فقط
+let displayLang = localStorage.getItem('quraish_lang') || 'ar';
+// نمط بطاقة الاسم: 'filled' (خلفية ملونة/خط أبيض) أو 'outlined' (خلفية بيضاء/حدود وخط ملون)
+let cardStyle = localStorage.getItem('quraish_style') || 'filled';
+
+function typeColor(type) {
+  switch(type) {
+    case 'prophet': return '#10b981';
+    case 'sahabi': return '#3b82f6';
+    case 'kafir': return '#ef4444';
+    case 'ancestor': return '#a855f7';
+    case 'mother': return '#ec4899';
+    default: return '#64748b';
+  }
+}
+
+let root = d3.hierarchy(rootData);
+// Collapse deep branches initially to reduce clutter
+function collapseDeep(d, depth) {
+  if (d.depth >= depth && d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else if (d.children) {
+    d.children.forEach(c => collapseDeep(c, depth));
+  }
+}
+
+let selectedId = null;
+let motherLineMode = false;
+let marriageMode = false;
+
+function update() {
+  // من أدب العرض: ترتيب الأبناء بحيث يكون الجد الذي على نسب النبي ﷺ في المنتصف
+  centerProphetLineage();
+
+  // nodeSize: عرض ~ NODE_W_MAX (أفقي بين الإخوة)، ارتفاع مسافة أقل بين الأب والابن
+  const treeLayout = d3.tree()
+    .nodeSize([NODE_W_MAX * 0.92, NODE_H * 1.9]);
+  treeLayout(root);
+
+  // Normalize positions
+  const nodes = root.descendants();
+  const links = root.links();
+
+  // Because we're RTL, mirror X by multiplying by -1
+  nodes.forEach(n => {
+    n.xpos = -n.x;
+    n.ypos = n.y;
+  });
+
+  // من أدب العرض: نجبر كل أجداد النبي ﷺ يتحطوا في عمود رأسي واحد في المنتصف
+  alignProphetSpine();
+
+  // احسب مجموعة أجداد الشخص المُختار (ليُلوَّن خطها بلون أفتح)
+  let selectedAncestorIds = null;
+  if (selectedId) {
+    const selNode = findNodeAnywhere(selectedId);
+    if (selNode) {
+      selectedAncestorIds = new Set(selNode.ancestors().map(n => n.data.id));
+    }
+  }
+
+  // Links
+  const linkSel = linkGroup.selectAll('path.link').data(links, d => d.target.data.id);
+  linkSel.exit().remove();
+  linkSel.enter().append('path').attr('class', 'link')
+    .merge(linkSel)
+    .attr('d', d => {
+      const s = { x: d.source.xpos, y: d.source.ypos };
+      const t = { x: d.target.xpos, y: d.target.ypos };
+      return `M${s.x},${s.y} C${s.x},${(s.y+t.y)/2} ${t.x},${(s.y+t.y)/2} ${t.x},${t.y}`;
+    })
+    .classed('child-link', d => selectedId && d.source.data.id === selectedId)
+    .classed('ancestor-link', d => selectedAncestorIds && selectedAncestorIds.has(d.target.data.id));
+
+  // Nodes
+  const nodeSel = nodeGroup.selectAll('g.node').data(nodes, d => d.data.id);
+  nodeSel.exit().remove();
+
+  const nodeEnter = nodeSel.enter().append('g')
+    .attr('class', 'node')
+    .attr('transform', d => `translate(${d.xpos},${d.ypos})`)
+    .on('click', (event, d) => {
+      event.stopPropagation();
+      selectPerson(d.data.id);
+    });
+
+  nodeEnter.append('rect')
+    .attr('rx', 8).attr('ry', 8);
+
+  nodeEnter.append('text')
+    .attr('class', 'name-ar')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'central');
+
+  nodeEnter.append('text')
+    .attr('class', 'name-en')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'central');
+
+  // زر التوسع/الطي (+/−) في أسفل العقدة
+  const toggleBtn = nodeEnter.append('g')
+    .attr('class', 'toggle-btn')
+    .attr('transform', `translate(0, ${NODE_H/2 + 6})`)
+    .style('cursor', 'pointer')
+    .on('click', (event, d) => {
+      event.stopPropagation();
+      if (d.children) {
+        // طي عميق: يجعل كل الأحفاد مطوية داخل أبنائهم
+        // بحيث لما يُعاد الفتح بـ + تظهر الأبناء المباشرين فقط
+        collapseRec(d);
+      } else if (d._children) {
+        // فتح الأبناء المباشرين فقط (يبقى أبناؤهم مطويين)
+        d.children = d._children;
+        d._children = null;
+      }
+      update();
+    });
+  toggleBtn.append('circle')
+    .attr('r', 12)
+    .attr('fill', '#fff')
+    .attr('stroke', d => typeColor(d.data.data?.type))
+    .attr('stroke-width', 2.5);
+  toggleBtn.append('text')
+    .attr('class', 'toggle-sign')
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'central')
+    .attr('y', 1)
+    .style('font-size', '22px')
+    .style('font-weight', 'bold')
+    .style('fill', d => typeColor(d.data.data?.type))
+    .style('pointer-events', 'none');
+
+  // Update existing
+  const nodesMerged = nodeSel.merge(nodeEnter)
+    .attr('transform', d => `translate(${d.xpos},${d.ypos})`)
+    .classed('selected', d => d.data.id === selectedId);
+
+  // حساب حجم ديناميكي لكل عقدة حسب طول الاسم
+  const AR_FONT = 28, EN_FONT = 20;
+  nodesMerged.each(function(d) {
+    const name = displayLang === 'ar'
+      ? shortName(d.data.data?.nameAr || d.data.name || '')
+      : (d.data.data?.nameEn || '');
+    const fs = displayLang === 'ar' ? AR_FONT : EN_FONT;
+    const widthPerChar = displayLang === 'ar' ? 0.7 : 0.55;
+    const est = name.length * fs * widthPerChar + 36;
+    d._nodeW = Math.max(NODE_W, Math.min(NODE_W_MAX, est));
+    d._nodeH = NODE_H;
+  });
+
+  // تطبيق الحجم والألوان على المستطيل
+  nodesMerged.select('rect')
+    .attr('x', d => -d._nodeW/2)
+    .attr('y', d => -d._nodeH/2)
+    .attr('width', d => d._nodeW)
+    .attr('height', d => d._nodeH)
+    .attr('fill', d => {
+      const c = typeColor(d.data.data?.type);
+      return cardStyle === 'filled' ? c : '#fff';
+    })
+    .attr('stroke', d => {
+      const c = typeColor(d.data.data?.type);
+      return cardStyle === 'filled' ? d3.color(c).darker(0.6) : c;
+    });
+
+  // CSS variable للون الخط (يستخدم في نمط outlined)
+  nodesMerged.each(function(d) {
+    this.style.setProperty('--node-color', typeColor(d.data.data?.type));
+  });
+
+  // تحديث نصوص الأسماء حسب اللغة
+  nodesMerged.select('.name-ar')
+    .style('display', displayLang === 'ar' ? null : 'none')
+    .style('font-size', AR_FONT + 'px')
+    .text(d => {
+      const n = shortName(d.data.data?.nameAr || d.data.name || '');
+      return n.length > 30 ? n.substring(0, 29) + '…' : n;
+    });
+  nodesMerged.select('.name-en')
+    .style('display', displayLang === 'en' ? null : 'none')
+    .style('font-size', EN_FONT + 'px')
+    .attr('font-family', "'Segoe UI', sans-serif")
+    .text(d => {
+      const n = d.data.data?.nameEn || '';
+      return n.length > 34 ? n.substring(0, 33) + '…' : n;
+    });
+
+  // موضع زر +/− يعتمد على ارتفاع العقدة
+  nodesMerged.select('.toggle-btn')
+    .attr('transform', d => `translate(0, ${d._nodeH/2 + 6})`);
+
+  // تحديث زر التوسع/الطي: الإخفاء، اللون، العلامة
+  const toggleSel = nodesMerged.select('.toggle-btn')
+    .style('display', d => {
+      const hasKids = (d.children && d.children.length) || (d._children && d._children.length);
+      return hasKids ? null : 'none';
+    });
+  // + (مطوي) بلون مميز ليعرف الناظر أن تحت الشخص أبناء مخفيين
+  toggleSel.select('circle')
+    .attr('fill', d => d._children && !d.children ? 'var(--accent)' : '#fff')
+    .attr('stroke', d => d._children && !d.children ? 'var(--accent)' : typeColor(d.data.data?.type));
+  toggleSel.select('text')
+    .style('fill', d => d._children && !d.children ? '#fff' : typeColor(d.data.data?.type))
+    .text(d => d.children ? '−' : '+');
+
+  drawMarriageLines();
+  drawMotherLine();
+}
+
+/* =========================================================
+   ربط النبي ﷺ - Relationship lines
+   ========================================================= */
+function findNodeById(id) {
+  return root.descendants().find(n => n.data.id === id);
+}
+
+function pathToAncestor(id) {
+  // Returns array of {x,y} points following fatherId chain up to root
+  const points = [];
+  const node = findNodeById(id);
+  if (!node) return points;
+  let cur = node;
+  while (cur) {
+    points.push({ x: cur.xpos, y: cur.ypos });
+    cur = cur.parent;
+  }
+  return points;
+}
+
+/**
+ * يرسم خطوط الزواج للشخص المحدد فقط (علاقاته الزوجية الظاهرة في الشجرة).
+ * يشمل:
+ *  - زوجاته (إذا كان الشخص زوج) — من wivesIds الخاصة به
+ *  - زوجها (إذا كان الشخص زوجة) — نبحث عن أي شخص آخر يضمّه في wivesIds
+ * الخط بنفسجي منحني مع رمز ♥ في المنتصف.
+ */
+function drawMarriageLines() {
+  marriageGroup.selectAll('*').remove();
+  if (!marriageMode || !selectedId) return;
+
+  const selPerson = PEOPLE[selectedId];
+  if (!selPerson) return;
+
+  const nodes = root.descendants();
+  const nodeMap = new Map();
+  nodes.forEach(n => nodeMap.set(n.data.id, n));
+
+  const selNode = nodeMap.get(selectedId);
+  if (!selNode) {
+    // الشخص المحدد نفسه مش مرئي في الشجرة (مثل صفية بنت حيي). لا نرسم خطوط.
+    return;
+  }
+
+  // اجمع كل IDs لشركاء الزواج مع الشخص المحدد
+  const partnerIds = new Set();
+  // 1) إذا كان زوج → أضف زوجاته
+  (selPerson.wivesIds || []).forEach(wid => partnerIds.add(wid));
+  // 2) إذا كان زوجة/ابنة → ابحث عمن عنده هذا الشخص في wivesIds
+  Object.values(PEOPLE).forEach(other => {
+    if (other.wivesIds && other.wivesIds.includes(selectedId)) {
+      partnerIds.add(other.id);
+    }
+  });
+
+  partnerIds.forEach(pid => {
+    const partnerNode = nodeMap.get(pid);
+    if (!partnerNode) return; // الشريك غير موجود في الشجرة الحالية
+
+    const x1 = selNode.xpos, y1 = selNode.ypos;
+    const x2 = partnerNode.xpos, y2 = partnerNode.ypos;
+    const dx = x2 - x1;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const offset = Math.min(80, Math.max(30, Math.abs(dx) * 0.25));
+    const path = `M${x1},${y1} Q${mx + offset},${my - offset} ${x2},${y2}`;
+    marriageGroup.append('path')
+      .attr('class', 'marriage-line')
+      .attr('d', path)
+      .attr('fill', 'none')
+      .attr('stroke', '#9333ea')
+      .attr('stroke-width', 4)
+      .attr('opacity', 0.85)
+      .attr('stroke-linecap', 'round');
+    marriageGroup.append('text')
+      .attr('class', 'marriage-heart')
+      .attr('x', mx + offset * 0.5)
+      .attr('y', my - offset * 0.5 + 6)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '24px')
+      .attr('fill', '#9333ea')
+      .text('♥');
+  });
+}
+
+/**
+ * يرسم خط ربط بين الشخص المحدد وأمه إن كانت موجودة في الشجرة.
+ * لون وردي/برتقالي + منقط (dashed) ليتميّز عن خط الزواج البنفسجي المستمر.
+ */
+function drawMotherLine() {
+  relationGroup.selectAll('*').remove();
+  if (!motherLineMode || !selectedId) return;
+
+  const selPerson = PEOPLE[selectedId];
+  if (!selPerson) return;
+
+  // اجمع شخصَين يحتاجان ربط: الشخص-أمه، أو أولاد-الشخص إذا كانت أُمًّا
+  const pairs = []; // [{childId, motherId}]
+  if (selPerson.motherId) {
+    pairs.push({ childId: selectedId, motherId: selPerson.motherId });
+  }
+  // لو الشخص المحدد هي أم (أنثى) ابحث عن كل أبنائها المسجّلين بـ motherId
+  Object.values(PEOPLE).forEach(p => {
+    if (p.motherId === selectedId) {
+      pairs.push({ childId: p.id, motherId: selectedId });
+    }
+  });
+
+  if (!pairs.length) return;
+
+  const nodes = root.descendants();
+  const nodeMap = new Map();
+  nodes.forEach(n => nodeMap.set(n.data.id, n));
+
+  pairs.forEach(({ childId, motherId }) => {
+    const childNode = nodeMap.get(childId);
+    const motherNode = nodeMap.get(motherId);
+    if (!childNode || !motherNode) return;
+
+    const x1 = childNode.xpos, y1 = childNode.ypos;
+    const x2 = motherNode.xpos, y2 = motherNode.ypos;
+    const dx = x2 - x1;
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const offset = Math.min(80, Math.max(30, Math.abs(dx) * 0.25));
+    // منحنى معاكس لاتجاه خط الزواج عشان ما يتداخلوش
+    const path = `M${x1},${y1} Q${mx - offset},${my + offset} ${x2},${y2}`;
+    relationGroup.append('path')
+      .attr('class', 'mother-line')
+      .attr('d', path)
+      .attr('fill', 'none')
+      .attr('stroke', '#ea580c')
+      .attr('stroke-width', 3.5)
+      .attr('stroke-dasharray', '8 5')
+      .attr('opacity', 0.85)
+      .attr('stroke-linecap', 'round');
+    // رمز بيت (🏠) في المنتصف — يرمز للأم كمصدر البيت والسكن
+    relationGroup.append('text')
+      .attr('class', 'mother-label')
+      .attr('x', mx - offset * 0.5)
+      .attr('y', my + offset * 0.5 + 6)
+      .attr('text-anchor', 'middle')
+      .attr('font-size', '20px')
+      .attr('fill', '#ea580c')
+      .text('🏠');
+  });
+}
+
+/* =========================================================
+   Side Panel
+   ========================================================= */
+function selectPerson(id) {
+  selectedId = id;
+  const p = PEOPLE[id];
+  if (!p) return;
+
+  // center the node
+  const node = findNodeById(id);
+  if (node) {
+    const transform = d3.zoomTransform(svg.node());
+    const targetX = width/2 - node.xpos * transform.k;
+    const targetY = height/2 - node.ypos * transform.k;
+    svg.transition().duration(600).call(
+      zoom.transform,
+      d3.zoomIdentity.translate(targetX, targetY).scale(transform.k)
+    );
+  }
+
+  const panel = document.getElementById('panel-content');
+  const typeLabel = {
+    prophet: 'النبي ﷺ',
+    sahabi: 'صحابي',
+    kafir: 'من كفار قريش',
+    ancestor: 'من أجداد النبي ﷺ',
+    mother: 'من أمهات المؤمنين',
+    neutral: 'من قريش'
+  }[p.type] || 'شخصية';
+
+  const isFocused = focusedIds.has(p.id);
+  const cat = (typeof personCategory === 'function') ? personCategory(p.id) : 'in-tree';
+  let html = `
+    <h2>${p.nameAr}</h2>
+    <div class="en-name">${p.nameEn || ''}</div>
+    <div class="panel-head-row">
+      <span class="badge ${p.type}">${typeLabel}</span>
+      <button class="panel-focus-btn ${isFocused ? 'active' : ''}" onclick="focusOnePerson('${p.id}', event)" title="Ctrl/Cmd+Click لإضافة الشخص لمجموعة التركيز الحالية">
+        🎯 <span class="pfb-label">${isFocused ? 'إلغاء التركيز' : 'تركيز على نسبه مع النبي ﷺ'}</span>
+      </button>
+    </div>
+  `;
+
+  // ملاحظة التصنيف (خارج قريش / من قريش غير موجود في الشجرة)
+  if (cat === 'external') {
+    html += `<div class="category-note category-external">
+      <strong>⚑ من خارج قريش</strong>
+      ${p.origin ? `<div class="cat-origin">الأصل: ${p.origin}</div>` : ''}
+    </div>`;
+  } else if (cat === 'quraish-not-in-tree') {
+    html += `<div class="category-note category-notintree">
+      <strong>◇ من قريش — غير موجود في الشجرة</strong>
+      ${p.origin ? `<div class="cat-origin">الأصل: ${p.origin}</div>` : ''}
+    </div>`;
+  }
+
+  // relation summary vs Prophet
+  const relSummary = buildRelationSummary(id);
+  if (relSummary) {
+    html += `<div class="relation-summary">${relSummary}</div>`;
+  }
+
+  if (p.role) {
+    html += `<div class="section"><h3>الدور التاريخي</h3><p>${p.role}</p></div>`;
+  }
+
+  // Father & lineage
+  const lineage = buildLineage(id);
+  if (lineage.length > 1) {
+    html += `<div class="section"><h3>النسب</h3><p>${lineage.map((n,i) => i===0? `<strong>${n.nameAr}</strong>` : `<span class="person-link" onclick="selectPerson('${n.id}')">${n.nameAr}</span>`).join(' بن ')}</p></div>`;
+  } else if (cat === 'external' || cat === 'quraish-not-in-tree') {
+    const originText = p.origin || 'غير موثّق في البيانات';
+    html += `<div class="section"><h3>النسب والأصل</h3>
+      <p><strong>${p.nameAr}</strong></p>
+      <p style="font-size:13px; color:var(--muted);">${originText}</p>
+    </div>`;
+  }
+
+  // الأم — تظهر دائمًا. إذا كانت موجودة في PEOPLE يتم تمييزها كرابط قابل للتركيز.
+  if (p.motherId) {
+    const m = PEOPLE[p.motherId];
+    if (m) {
+      const mLineage = buildLineage(m.id);
+      const inTree = (typeof findNodeAnywhere === 'function') && findNodeAnywhere(m.id);
+      const nameHtml = inTree
+        ? `<span class="person-link" onclick="selectPerson('${m.id}')">${m.nameAr}</span>`
+        : `<span class="spouse-plain" onclick="selectPerson('${m.id}')">${m.nameAr}</span>`;
+      html += `<div class="section"><h3>الأم</h3>
+        <p>${nameHtml}</p>
+        ${mLineage.length > 1 ? `<p style="font-size:12px; color:var(--muted)">نسبها: ${mLineage.map(n => n.nameAr).join(' بنت/بن ')}</p>` : (m.origin ? `<p style="font-size:12px; color:var(--muted)">الأصل: ${m.origin}</p>` : '')}
+        ${m.role ? `<p style="font-size:13px">${m.role}</p>` : ''}
+      </div>`;
+    } else {
+      // motherId موجود لكن ليس له سجل في PEOPLE — اعرض الاسم النصي فقط
+      html += `<div class="section"><h3>الأم</h3><p>${p.motherId}</p></div>`;
+    }
+  } else if (p.motherName) {
+    // نص حر لاسم الأم بدون معرّف
+    html += `<div class="section"><h3>الأم</h3>
+      <p>${p.motherName}</p>
+      ${p.motherOrigin ? `<p style="font-size:12px; color:var(--muted)">${p.motherOrigin}</p>` : ''}
+    </div>`;
+  }
+
+  // الأزواج/الزوجات — للطرفين (سواء كان الشخص زوجًا أو زوجة)
+  const spouseIds = new Set();
+  // 1) إذا كان زوج → أضف زوجاته
+  (p.wivesIds || []).forEach(wid => spouseIds.add(wid));
+  // 2) ابحث عمن يضم هذا الشخص في wivesIds (كزوجة)
+  Object.values(PEOPLE).forEach(other => {
+    if (other.wivesIds && other.wivesIds.includes(p.id)) spouseIds.add(other.id);
+  });
+
+  if (spouseIds.size) {
+    const isWife = p.gender === 'f' || p.type === 'mother';
+    const heading = isWife ? 'الأزواج' : 'الزوجات';
+    html += `<div class="section"><h3>${heading} (${spouseIds.size})</h3><ul>`;
+    spouseIds.forEach(sid => {
+      const s = PEOPLE[sid];
+      if (!s) {
+        html += `<li>${sid}</li>`;
+        return;
+      }
+      // هل الشخص موجود في الشجرة؟
+      const inTree = findNodeAnywhere ? findNodeAnywhere(sid) : null;
+      if (inTree) {
+        // موجود في الشجرة → رابط person-link مميز
+        html += `<li><span class="person-link" onclick="selectPerson('${s.id}')">${s.nameAr}</span>`;
+      } else {
+        // غير موجود في الشجرة → اسم فقط بدون تمييز رابط
+        html += `<li><span class="spouse-plain" onclick="selectPerson('${s.id}')">${s.nameAr}</span>`;
+      }
+      const wLineage = buildLineage(s.id);
+      if (wLineage.length > 1) {
+        html += ` <span style="color:var(--muted); font-size:12px">— من ${wLineage[wLineage.length - 1].nameAr}</span>`;
+      } else if (s.origin) {
+        html += ` <span style="color:var(--muted); font-size:12px">— ${s.origin}</span>`;
+      }
+      html += `</li>`;
+    });
+    html += `</ul></div>`;
+  }
+
+  // Children
+  if (p.childrenIds && p.childrenIds.length) {
+    const knownChildren = p.childrenIds.filter(cid => PEOPLE[cid]);
+    if (knownChildren.length) {
+      html += `<div class="section"><h3>الأبناء والبنات (${knownChildren.length})</h3><ul>`;
+      knownChildren.forEach(cid => {
+        const c = PEOPLE[cid];
+        const motherNote = c.motherId && PEOPLE[c.motherId] ? ` <span style="color:var(--muted); font-size:12px">— من ${PEOPLE[c.motherId].nameAr}</span>` : '';
+        html += `<li><span class="person-link" onclick="selectPerson('${c.id}')">${c.nameAr}</span>${motherNote}</li>`;
+      });
+      html += `</ul></div>`;
+    }
+  }
+
+  panel.innerHTML = html;
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  document.body.classList.add('has-selection');
+  if (isMobile) {
+    // املأ Peek Card بالاسم والشارة والتفاصيل
+    if (typeof renderPeekCard === 'function') renderPeekCard(id);
+    // أغلق Names Drawer لو كان مفتوحًا بعد الاختيار منه
+    if (!document.body.classList.contains('sidebar-hidden')) hideSidebar();
+  } else {
+    document.getElementById('side-panel').classList.add('open');
+    document.body.classList.add('panel-open');
+  }
+  update();
+}
+
+// (متوافقية — لم تعد مستخدمة على الموبايل بعد التصميم الجديد)
+function minimizePanel() {
+  document.getElementById('side-panel').classList.remove('open');
+  document.body.classList.remove('panel-open');
+}
+function restorePanel() {
+  if (!selectedId) return;
+  document.getElementById('side-panel').classList.add('open');
+  document.body.classList.add('panel-open');
+}
+
+// إلغاء تحديد الشخصية بالكامل
+function clearSelection() {
+  selectedId = null;
+  document.getElementById('side-panel').classList.remove('open');
+  document.body.classList.remove('panel-open', 'has-selection', 'peek-expanded');
+  update();
+}
+
+function closePanel() { clearSelection(); }
+
+function buildLineage(id) {
+  const chain = [];
+  let cur = PEOPLE[id];
+  while (cur) {
+    chain.push(cur);
+    cur = cur.fatherId ? PEOPLE[cur.fatherId] : null;
+  }
+  return chain;
+}
+
+function buildRelationSummary(id) {
+  if (id === 'muhammad') return null;
+  const p = PEOPLE[id];
+  if (!p) return null;
+
+  const notes = [];
+
+  // Father-side common ancestor with Prophet
+  const prophetChain = buildLineage('muhammad').map(n => n.id);
+  const personChain = buildLineage(id);
+  let commonAncestor = null;
+  let generations = 0;
+  for (let i = 0; i < personChain.length; i++) {
+    if (prophetChain.includes(personChain[i].id)) {
+      commonAncestor = personChain[i];
+      generations = i;
+      break;
+    }
+  }
+  if (commonAncestor) {
+    if (id === commonAncestor.id) {
+      notes.push(`<strong>جدّ للنبي ﷺ</strong>`);
+    } else {
+      notes.push(`يلتقي نسبه مع النبي ﷺ عند <strong>${commonAncestor.nameAr}</strong> (الجد رقم ${generations} له)`);
+    }
+  }
+
+  // Mother-side
+  if (p.motherId) {
+    const mother = PEOPLE[p.motherId];
+    if (mother) {
+      const motherChain = buildLineage(mother.id);
+      const motherCommon = motherChain.find(n => prophetChain.includes(n.id));
+      if (motherCommon) {
+        if (motherCommon.id === 'abd_al_muttalib') {
+          notes.push(`أمه <strong>${mother.nameAr}</strong> ابنة عبد المطلب، فهو <strong>ابن عمة النبي ﷺ</strong>`);
+        } else {
+          notes.push(`من جهة الأم <strong>${mother.nameAr}</strong>، يلتقي عند ${motherCommon.nameAr}`);
+        }
+      }
+    }
+  }
+
+  // Wife side (for husbands of Prophet's wives' sisters/relatives)
+  // If any wife is daughter of someone whose other daughter is Prophet's wife
+  if (p.wivesIds) {
+    p.wivesIds.forEach(wid => {
+      const wife = PEOPLE[wid];
+      if (wife && wife.fatherId) {
+        const fatherOfWife = PEOPLE[wife.fatherId];
+        if (fatherOfWife) {
+          const sisters = (fatherOfWife.childrenIds || []).map(c => PEOPLE[c]).filter(Boolean);
+          const prophetWife = sisters.find(d => PEOPLE['muhammad'].wivesIds?.includes(d.id));
+          if (prophetWife) {
+            notes.push(`زوجته <strong>${wife.nameAr}</strong> أختها <strong>${prophetWife.nameAr}</strong> زوج النبي ﷺ، فهو <strong>صهر النبي ﷺ</strong>`);
+          }
+        }
+      }
+    });
+  }
+
+  // If person is daughter/son of Khadija's brother (uncle/aunt-relationship to Prophet via marriage)
+  if (p.fatherId) {
+    const father = PEOPLE[p.fatherId];
+    if (father && father.fatherId === 'khuwaylid') {
+      notes.push(`أبوه <strong>${father.nameAr}</strong> أخو خديجة أم المؤمنين، فهو <strong>ابن أخ خديجة رضي الله عنها</strong>`);
+    }
+  }
+
+  return notes.length ? notes.join('<br>') : null;
+}
+
+/* =========================================================
+   Controls
+   ========================================================= */
+document.getElementById('btn-reset').addEventListener('click', () => {
+  centerTree();
+});
+document.getElementById('btn-mother-line').addEventListener('click', (e) => {
+  motherLineMode = !motherLineMode;
+  e.currentTarget.classList.toggle('active', motherLineMode);
+  drawMotherLine();
+});
+document.getElementById('btn-marriage').addEventListener('click', (e) => {
+  marriageMode = !marriageMode;
+  e.currentTarget.classList.toggle('active', marriageMode);
+  drawMarriageLines();
+});
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.trim();
+  if (!q) return;
+  const match = Object.values(PEOPLE).find(p =>
+    p.nameAr?.includes(q) || (p.nameEn || '').toLowerCase().includes(q.toLowerCase())
+  );
+  if (match) {
+    // Expand all ancestors of the match
+    let curId = match.fatherId;
+    while (curId) {
+      const node = findNodeById(curId);
+      if (node && node._children) {
+        node.children = node._children;
+        node._children = null;
+      }
+      curId = PEOPLE[curId]?.fatherId;
+    }
+    update();
+    selectPerson(match.id);
+  }
+});
+
+function centerTree() {
+  width = container.clientWidth;
+  height = container.clientHeight;
+  svg.attr('width', width).attr('height', height);
+
+  // احسب حدود الشجرة الحالية (كل العقد المعروضة) واحسب زوم مناسب يُظهرها كلها
+  const visibleNodes = root.descendants();
+  if (!visibleNodes.length) {
+    svg.call(zoom.transform, d3.zoomIdentity.translate(width/2, 80).scale(0.55));
+    return;
+  }
+  const pad = 60;
+  const xs = visibleNodes.map(n => n.xpos);
+  const ys = visibleNodes.map(n => n.ypos);
+  const minX = Math.min(...xs) - NODE_W/2 - pad;
+  const maxX = Math.max(...xs) + NODE_W/2 + pad;
+  const minY = Math.min(...ys) - NODE_H/2 - pad;
+  const maxY = Math.max(...ys) + NODE_H/2 + pad;
+  const bw = maxX - minX;
+  const bh = maxY - minY;
+
+  const k = Math.min(width / bw, height / bh, 1);
+  const tx = width / 2 - ((minX + maxX) / 2) * k;
+  const ty = height / 2 - ((minY + maxY) / 2) * k;
+
+  svg.transition().duration(500).call(
+    zoom.transform,
+    d3.zoomIdentity.translate(tx, ty).scale(k)
+  );
+}
+
+window.addEventListener('resize', centerTree);
+
+/* =========================================================
+   القائمة الجانبية اليسرى (4 تابات)
+   ========================================================= */
+function buildLeftSidebar() {
+  const all = Object.values(PEOPLE);
+
+  const sahabiMale = all.filter(p => p.type === 'sahabi' && p.gender !== 'f');
+  const sahabiyat  = all.filter(p => p.type === 'mother' || (p.type === 'sahabi' && p.gender === 'f'));
+  const kuffar     = all.filter(p => p.type === 'kafir');
+  const others     = all.filter(p => p.type === 'ancestor' || p.type === 'neutral');
+
+  const sortWithRank = (arr) => ({
+    ranked: arr.filter(p => p.rank).sort((a,b) => a.rank - b.rank),
+    rest:   arr.filter(p => !p.rank).sort((a,b) => a.nameAr.localeCompare(b.nameAr, 'ar'))
+  });
+
+  function renderItem(p) {
+    const rankBadge = p.rank ? `<span class="rank">${p.rank}</span>` : '';
+    const cat = personCategory(p.id);
+    let marker = '';
+    if (cat === 'external') {
+      marker = `<span class="cat-marker marker-external" title="من خارج قريش">⚑</span>`;
+    } else if (cat === 'quraish-not-in-tree') {
+      marker = `<span class="cat-marker marker-notintree" title="من قريش لكن غير موجود في الشجرة">◇</span>`;
+    }
+    return `<div class="cat-item" data-id="${p.id}">
+      <span class="cat-item-main" onclick="selectPersonFromSidebar('${p.id}')">
+        <span class="dot" style="background:${typeColor(p.type)}"></span>
+        <span class="cat-item-name">${p.nameAr}</span>
+        ${marker}
+        ${rankBadge}
+      </span>
+      <button class="cat-focus-btn" onclick="event.stopPropagation(); focusOnePerson('${p.id}')" title="تركيز على نسبه مع النبي ﷺ">🎯</button>
+    </div>`;
+  }
+
+  /**
+   * يصنّف الشخص:
+   *   'in-tree'             — من قريش وموجود في الشجرة (له fatherId يُوصل لفهر)
+   *   'quraish-not-in-tree' — من قريش لكن لا يُوصل لفهر
+   *   'external'            — من خارج قريش (origin يدل على أصل غير قرشي)
+   */
+  function personCategory(id) {
+    const p = PEOPLE[id];
+    if (!p) return 'external';
+    const origin = p.origin || '';
+    // أي عبارة صريحة تدل أنه من خارج قريش
+    const isExplicitlyExternal = /غير قريش|من غير|ليس من قريش|بني إسرائيل|إسرائيل/.test(origin);
+    if (isExplicitlyExternal) return 'external';
+    // origin يحتوي "قريش" (ولم يكن قد استُبعد أعلاه) → من قريش
+    const isExplicitlyQuraish = /\bقريش\b/.test(origin) && !isExplicitlyExternal;
+    // هل يُوصل لفهر عبر سلسلة الأب؟
+    let cur = p, guard = 0;
+    while (cur && guard++ < 50) {
+      if (cur.id === 'fihr') return 'in-tree';
+      cur = cur.fatherId ? PEOPLE[cur.fatherId] : null;
+    }
+    // لم يصل — إذا origin صرّح بأنه قرشي فهو قرشي غير موجود في الشجرة، وإلا نفس الحكم
+    return 'quraish-not-in-tree';
+  }
+  window.personCategory = personCategory;
+  function renderPanel(sorted, subA, subB, groupKeyA, groupKeyB) {
+    let body = '';
+    if (sorted.ranked.length) {
+      if (subA) {
+        const btn = groupKeyA ? `<button class="group-focus-btn" onclick="focusGroup('${groupKeyA}')" title="تركيز على نسب المجموعة كاملة">🎯 تركيز المجموعة</button>` : '';
+        body += `<div class="cat-subheader"><span>${subA}</span>${btn}</div>`;
+      }
+      body += sorted.ranked.map(renderItem).join('');
+    }
+    if (sorted.rest.length) {
+      if (sorted.ranked.length && subB) {
+        const btn = groupKeyB ? `<button class="group-focus-btn" onclick="focusGroup('${groupKeyB}')" title="تركيز على نسب المجموعة كاملة">🎯 تركيز المجموعة</button>` : '';
+        body += `<div class="cat-subheader"><span>${subB}</span>${btn}</div>`;
+      }
+      body += sorted.rest.map(renderItem).join('');
+    }
+    return body;
+  }
+
+  const sahabiSorted   = sortWithRank(sahabiMale);
+  const sahabiyaSorted = sortWithRank(sahabiyat);
+  const kuffarSorted   = { ranked: [], rest: kuffar.slice().sort((a,b) => a.nameAr.localeCompare(b.nameAr, 'ar')) };
+  const othersSorted   = { ranked: [], rest: others.slice().sort((a,b) => a.nameAr.localeCompare(b.nameAr, 'ar')) };
+
+  // مفاتيح المجموعات (ten / mothers / kuffar) للتركيز الجماعي
+  document.getElementById('panel-sahabi').innerHTML   = renderPanel(sahabiSorted, 'العشرة المبشرون بالجنة', 'باقي الصحابة', 'ten', null);
+  document.getElementById('panel-sahabiya').innerHTML = renderPanel(sahabiyaSorted, 'أمهات المؤمنين', 'باقي الصحابيات', 'mothers', null);
+  // للكفار: ضع زر مجموعة أعلى القائمة (نعطيه عنوانًا فرعيًا واحدًا)
+  const kuffarBody = renderPanel({ ranked: kuffarSorted.rest, rest: [] }, 'زعماء كفار قريش', '', 'kuffar', null);
+  document.getElementById('panel-kafir').innerHTML    = kuffarBody;
+  document.getElementById('panel-other').innerHTML    = renderPanel(othersSorted, '', '', null, null);
+
+  const cnt = (s) => s.ranked.length + s.rest.length;
+  document.getElementById('count-sahabi').textContent   = cnt(sahabiSorted);
+  document.getElementById('count-sahabiya').textContent = cnt(sahabiyaSorted);
+  document.getElementById('count-kafir').textContent    = cnt(kuffarSorted);
+  document.getElementById('count-other').textContent    = cnt(othersSorted);
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+}
+
+function selectPersonFromSidebar(id) {
+  // ensure ancestors are expanded in tree
+  let curId = PEOPLE[id]?.fatherId;
+  while (curId) {
+    const node = findNodeById(curId);
+    if (node && node._children) {
+      node.children = node._children;
+      node._children = null;
+    }
+    curId = PEOPLE[curId]?.fatherId;
+  }
+  update();
+  document.querySelectorAll('.cat-item').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  selectPerson(id);
+}
+
+buildLeftSidebar();
+
+// تطبيق نمط البطاقة المحفوظ
+document.body.classList.add('style-' + cardStyle);
+
+// على الموبايل: القائمة مخفية افتراضيًا، ويتم تحديثها عند تغير حجم النافذة
+function applyMobileDefaults() {
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    document.body.classList.add('sidebar-hidden');
+    const btn = document.getElementById('btn-toggle-sidebar');
+    if (btn) btn.classList.remove('active');
+  }
+}
+applyMobileDefaults();
+window.addEventListener('resize', applyMobileDefaults);
+
+/* =========================================================
+   أوامر الموبايل — Peek Card + Tools Sheet + Names Drawer
+   ========================================================= */
+function triggerClick(id) {
+  const el = document.getElementById(id);
+  if (el) el.click();
+}
+
+/* ----- أزرار Peek Card ----- */
+function peekFocus() {
+  triggerClick('btn-focus');
+  const active = document.getElementById('btn-focus').classList.contains('active');
+  const btn = document.getElementById('peek-btn-focus');
+  if (btn) btn.classList.toggle('active', active);
+}
+function peekChildren() {
+  triggerClick('btn-show-children');
+}
+function peekMother() {
+  triggerClick('btn-mother-line');
+  const active = document.getElementById('btn-mother-line').classList.contains('active');
+  const btn = document.getElementById('peek-btn-mother');
+  if (btn) btn.classList.toggle('active', active);
+}
+function peekMarriage() {
+  triggerClick('btn-marriage');
+  const active = document.getElementById('btn-marriage').classList.contains('active');
+  const btn = document.getElementById('peek-btn-marriage');
+  if (btn) btn.classList.toggle('active', active);
+}
+function peekExpand() {
+  document.body.classList.toggle('peek-expanded');
+}
+function peekCollapse() {
+  document.body.classList.remove('peek-expanded');
+}
+
+/* ----- ملء محتوى Peek Card ----- */
+function renderPeekCard(id) {
+  const p = PEOPLE[id];
+  if (!p) return;
+  const nameEl = document.getElementById('peek-name');
+  const badgeEl = document.getElementById('peek-badge');
+  const detailsEl = document.getElementById('peek-details');
+  if (!nameEl) return;
+  nameEl.textContent = shortName(p.nameAr);
+  const typeLabel = {
+    prophet: 'النبي ﷺ',
+    sahabi: 'صحابي',
+    kafir: 'من كفار قريش',
+    ancestor: 'جد',
+    mother: 'أم المؤمنين',
+    neutral: 'من قريش'
+  }[p.type] || 'شخصية';
+  badgeEl.textContent = typeLabel;
+  badgeEl.className = 'peek-badge ' + (p.type || 'neutral');
+  // نسخ محتوى البانل الجانبي إلى تفاصيل البطاقة
+  detailsEl.innerHTML = document.getElementById('panel-content').innerHTML;
+  // حدّث حالات active لأزرار Peek
+  const syncBtn = (peekId, deskId) => {
+    const pb = document.getElementById(peekId);
+    const db = document.getElementById(deskId);
+    if (pb && db) pb.classList.toggle('active', db.classList.contains('active'));
+  };
+  syncBtn('peek-btn-focus', 'btn-focus');
+  syncBtn('peek-btn-mother', 'btn-mother-line');
+  syncBtn('peek-btn-marriage', 'btn-marriage');
+}
+
+/* ----- Tools Sheet ----- */
+function mbProphet()  { triggerClick('btn-prophet'); closeMobileMenu(); }
+function mbExpandCollapse() {
+  // زر مشترك: يبدل بين "عرض الكل" و "طي الكل"
+  const btn = document.getElementById('mb-expand-collapse-btn');
+  const isExpandMode = btn.textContent.includes('عرض');
+  if (isExpandMode) {
+    triggerClick('btn-expand');
+    btn.textContent = '⇱ طي الكل';
+  } else {
+    triggerClick('btn-collapse');
+    btn.textContent = '⇲ عرض الكل';
+  }
+}
+function mbLang() {
+  triggerClick('btn-lang');
+  document.getElementById('mb-lang-btn').textContent =
+    displayLang === 'ar' ? '🌐 عربي' : '🌐 English';
+}
+function mbStyle() { triggerClick('btn-style'); }
+function mbLegend() {
+  triggerClick('btn-toggle-legend');
+  const active = !document.body.classList.contains('legend-hidden');
+  document.getElementById('mb-legend-btn').classList.toggle('active', active);
+}
+function mbPrint() { closeMobileMenu(); triggerClick('btn-print'); }
+
+function openMobileMenu()  { document.body.classList.add('menu-open'); }
+function closeMobileMenu() { document.body.classList.remove('menu-open'); }
+
+/* ----- Names Drawer ----- */
+function toggleMobileSidebar() {
+  document.body.classList.toggle('sidebar-hidden');
+  syncSidebarToggleButton();
+}
+function hideSidebar() {
+  document.body.classList.add('sidebar-hidden');
+  syncSidebarToggleButton();
+}
+function syncSidebarToggleButton() {
+  const btn = document.getElementById('btn-toggle-sidebar');
+  if (btn) btn.classList.toggle('active', !document.body.classList.contains('sidebar-hidden'));
+}
+window.hideSidebar = hideSidebar;
+
+/* ----- إغلاق Sheet/Drawer بالضغط على backdrop ----- */
+document.addEventListener('click', (e) => {
+  // Tools Sheet
+  if (document.body.classList.contains('menu-open')) {
+    const sheet = document.getElementById('mobile-menu-sheet');
+    const openBtn = document.getElementById('m-menu-btn');
+    if (sheet && !sheet.contains(e.target) && openBtn && !openBtn.contains(e.target)) {
+      closeMobileMenu();
+    }
+  }
+  // Names Drawer
+  if (!document.body.classList.contains('sidebar-hidden') &&
+      window.matchMedia('(max-width: 768px)').matches) {
+    const sb = document.getElementById('left-sidebar');
+    const openBtn = document.getElementById('m-sidebar-btn');
+    if (sb && !sb.contains(e.target) && openBtn && !openBtn.contains(e.target)) {
+      hideSidebar();
+    }
+  }
+});
+
+/* ----- سحب Peek Card (touch) ----- */
+function setupPeekCardDrag() {
+  const card = document.getElementById('peek-card');
+  if (!card) return;
+  let startY = 0, currentY = 0, dragging = false, startExpanded = false;
+
+  const onStart = (clientY) => {
+    startY = clientY;
+    currentY = clientY;
+    dragging = true;
+    startExpanded = document.body.classList.contains('peek-expanded');
+    card.style.transition = 'none';
+  };
+  const onMove = (clientY) => {
+    if (!dragging) return;
+    currentY = clientY;
+  };
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    card.style.transition = '';
+    const dy = currentY - startY;
+    const THRESHOLD = 50;
+    if (startExpanded) {
+      // كان متمدد — إذا سحب لأسفل يرجع Peek، إذا أكثر يلغي الاختيار
+      if (dy > THRESHOLD * 3) { clearSelection(); }
+      else if (dy > THRESHOLD) { peekCollapse(); }
+    } else {
+      // كان Peek — إذا سحب لأعلى يتمدد، إذا لأسفل يلغي
+      if (dy < -THRESHOLD) { document.body.classList.add('peek-expanded'); }
+      else if (dy > THRESHOLD * 2) { clearSelection(); }
+    }
+  };
+
+  // اسحب فقط من الـ handle أو الـ summary (ليس من داخل الأزرار)
+  const handle = card.querySelector('.peek-handle');
+  const summary = card.querySelector('.peek-summary .peek-title');
+  [handle, summary].forEach(el => {
+    if (!el) return;
+    el.addEventListener('touchstart', (e) => onStart(e.touches[0].clientY), {passive: true});
+    el.addEventListener('touchmove',  (e) => onMove(e.touches[0].clientY),  {passive: true});
+    el.addEventListener('touchend',   onEnd, {passive: true});
+    // دعم الماوس للاختبار على الديسكتوب
+    el.addEventListener('mousedown', (e) => onStart(e.clientY));
+  });
+  document.addEventListener('mousemove', (e) => dragging && onMove(e.clientY));
+  document.addEventListener('mouseup', onEnd);
+
+  // الضغط على الـ title يتمدد (إذا لم يكن سحبًا)
+  if (summary) {
+    summary.addEventListener('click', (e) => {
+      // تجاهل الضغط على الأزرار
+      if (e.target.closest('button')) return;
+      document.body.classList.toggle('peek-expanded');
+    });
+  }
+}
+
+/* ----- عرض عناصر الموبايل ----- */
+if (window.matchMedia('(max-width: 768px)').matches) {
+  ['m-menu-btn','m-sidebar-btn','mobile-menu-sheet','peek-card','reset-fab'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = '';
+  });
+  const langBtn = document.getElementById('mb-lang-btn');
+  if (langBtn) langBtn.textContent = displayLang === 'ar' ? '🌐 عربي' : '🌐 English';
+  const legendBtn = document.getElementById('mb-legend-btn');
+  if (legendBtn) legendBtn.classList.add('active');
+  setupPeekCardDrag();
+}
+
+// Expose
+window.peekFocus = peekFocus;
+window.peekChildren = peekChildren;
+window.peekMother = peekMother;
+window.peekMarriage = peekMarriage;
+window.peekExpand = peekExpand;
+window.renderPeekCard = renderPeekCard;
+window.mbProphet = mbProphet;
+window.mbExpandCollapse = mbExpandCollapse;
+window.mbLang = mbLang;
+window.mbStyle = mbStyle;
+window.mbLegend = mbLegend;
+window.mbPrint = mbPrint;
+window.openMobileMenu = openMobileMenu;
+window.closeMobileMenu = closeMobileMenu;
+window.toggleMobileSidebar = toggleMobileSidebar;
+
+/* =========================================================
+   Dynamic header height  — يمنع تداخل القائمة مع الهيدر
+   ========================================================= */
+function updateHeaderHeight() {
+  const h = document.querySelector('header').offsetHeight;
+  document.documentElement.style.setProperty('--header-h', h + 'px');
+}
+// ResizeObserver يتابع تغير ارتفاع الهيدر تلقائيًا (لو الأزرار لفّت لسطر تاني)
+const _headerEl = document.querySelector('header');
+if (window.ResizeObserver) {
+  new ResizeObserver(updateHeaderHeight).observe(_headerEl);
+}
+requestAnimationFrame(updateHeaderHeight);
+window.addEventListener('load', updateHeaderHeight);
+window.addEventListener('resize', updateHeaderHeight);
+
+/* =========================================================
+   أزرار التحكم — طي/توسيع/تركيز/طباعة
+   =========================================================
+
+   ملاحظات مهمة للـ layout:
+   - عشان الشجرة تعيد تجميع الأشخاص لما نطوي عقدة في النص،
+     نستخدم خاصية d3 المعتادة: نقل الأبناء إلى d._children
+     (فيتجاهلهم الـ tree layout ويُعيد توزيع المساحة تلقائياً).
+   - نستعمل d._focusBackup لحفظ حالة الطي قبل وضع التركيز.
+*/
+
+// اسم مختصر للعرض في عقد الشجرة:
+//   - يشيل سلسلة "بن/بنت فلان"
+//   - يحتفظ بالألقاب بين الأقواس (مثل "ذو النورين"، "حواري النبي")
+//   - يُسقط الأقواس اللي جواها سلسلة نسب (مثل "رملة بنت أبي سفيان")
+//   أمثلة:
+//     "عبد الله بن عبد المطلب"         → "عبد الله"
+//     "الزبير بن العوام (حواري النبي)" → "الزبير (حواري النبي)"
+//     "أم حبيبة (رملة بنت أبي سفيان)"  → "أم حبيبة"
+//     "أبو بكر الصديق"                 → "أبو بكر الصديق"
+function shortName(fullName) {
+  if (!fullName) return '';
+  // ملاحظة: \b في JS regex لا يعمل مع الحروف العربية، فنستعمل indexOf بدلاً منه.
+
+  // افصل الجزء الأساسي عن أي قوس في آخر الاسم
+  const parenIdx = fullName.lastIndexOf('(');
+  let main, paren = null;
+  if (parenIdx >= 0 && fullName.endsWith(')')) {
+    main = fullName.substring(0, parenIdx).trim();
+    paren = fullName.substring(parenIdx + 1, fullName.length - 1).trim();
+  } else {
+    main = fullName.trim();
+  }
+
+  // اشطب " بن ..." أو " بنت ..." من الجزء الأساسي
+  const cut = (s) => {
+    const i1 = s.indexOf(' بن ');
+    const i2 = s.indexOf(' بنت ');
+    let idx = -1;
+    if (i1 >= 0) idx = i1;
+    if (i2 >= 0 && (idx < 0 || i2 < idx)) idx = i2;
+    return idx >= 0 ? s.substring(0, idx).trim() : s;
+  };
+  const mainShort = cut(main);
+
+  // احتفظ بالقوس فقط إذا لم يحتوِ على سلسلة نسب
+  const parenHasLineage = paren && (paren.includes(' بن ') || paren.includes(' بنت ') ||
+                                    paren.startsWith('بن ') || paren.startsWith('بنت '));
+  if (paren && !parenHasLineage) {
+    return `${mainShort} (${paren})`;
+  }
+  return mainShort;
+}
+
+// تجوال عميق: يزور كل العقد حتى المطوية داخل _children
+function eachDeep(node, fn) {
+  fn(node);
+  if (node.children) node.children.forEach(c => eachDeep(c, fn));
+  if (node._children) node._children.forEach(c => eachDeep(c, fn));
+}
+
+// من أدب العرض (خطوة 2): بعد d3.tree، نترجم الشجرة بحيث يكون النبي ﷺ
+// (أو أعمق أجداده المرئية) في منتصف الشاشة. لا نجبر الأجداد على موقع واحد لأن
+// ذلك يُخلّ بتخطيط d3.tree ويُسبب تداخل المربعات.
+function alignProphetSpine() {
+  // نبحث فقط في العقد المرئية حالياً (عبر children)
+  const visibleNodes = root.descendants();
+  // نستخدم النبي إن كان مرئياً، وإلا أعمق جد من أجداده مرئي
+  let anchorNode = visibleNodes.find(d => d.data.id === 'muhammad');
+  if (!anchorNode) {
+    // ابحث عن أعمق جد من أجداد النبي المرئية
+    const muhDeep = findNodeAnywhere('muhammad');
+    if (muhDeep) {
+      const chain = muhDeep.ancestors(); // من muhammad صعوداً للجذر
+      for (const a of chain) {
+        if (visibleNodes.includes(a)) { anchorNode = a; break; }
+      }
+    }
+  }
+  if (!anchorNode) return;
+
+  const shift = -anchorNode.xpos;
+  if (Math.abs(shift) > 0.1) {
+    visibleNodes.forEach(d => { d.xpos += shift; });
+  }
+}
+
+// من أدب العرض: يعيد ترتيب الأبناء بحيث يكون الجد الذي على نسب النبي ﷺ
+// في المنتصف بين إخوته في كل مستوى. يُستدعى في كل update().
+function centerProphetLineage() {
+  let muhammadNode = null;
+  eachDeep(root, d => { if (!muhammadNode && d.data.id === 'muhammad') muhammadNode = d; });
+  if (!muhammadNode) return;
+  const pathIds = new Set(muhammadNode.ancestors().map(n => n.data.id));
+
+  function reorderList(arr) {
+    if (!arr || arr.length <= 1) return arr;
+    const idx = arr.findIndex(c => pathIds.has(c.data.id));
+    if (idx < 0) return arr;
+    const pathChild = arr[idx];
+    const others = arr.filter((_, i) => i !== idx);
+    const mid = Math.floor(others.length / 2);
+    return [...others.slice(0, mid), pathChild, ...others.slice(mid)];
+  }
+
+  eachDeep(root, d => {
+    if (d.children) d.children = reorderList(d.children);
+    if (d._children) d._children = reorderList(d._children);
+  });
+}
+
+// يبحث عن أي عقدة في الشجرة بالـ id حتى لو كانت مطويّة داخل _children
+function findNodeAnywhere(id) {
+  let found = null;
+  eachDeep(root, d => { if (!found && d.data.id === id) found = d; });
+  return found;
+}
+
+// يضمن أن كل الآباء حتى الجذر موسّعين (children، مش _children)
+function ensureAncestorsExpanded(id) {
+  const n = findNodeAnywhere(id);
+  if (!n) return;
+  let cur = n.parent;
+  while (cur) {
+    if (cur._children && cur._children.length) {
+      cur.children = (cur.children || []).concat(cur._children);
+      cur._children = null;
+    }
+    cur = cur.parent;
+  }
+}
+
+// توسيع عميق لجميع العقد (يستعيد _children إلى children recursive)
+function expandAll() {
+  function rec(d) {
+    if (d._children && d._children.length) {
+      d.children = (d.children || []).concat(d._children);
+      d._children = null;
+    }
+    if (d.children) d.children.forEach(rec);
+  }
+  rec(root);
+}
+
+// طي عميق لجميع العقد (post-order: يطوي الأبناء قبل الأب)
+function collapseAllDeep() {
+  collapseRec(root);
+}
+
+// طي عميق لعقدة معيّنة وكل أحفادها (post-order)
+// بحيث لما يُعاد الفتح تظهر الأبناء المباشرين فقط
+function collapseRec(node) {
+  if (node.children) {
+    node.children.forEach(collapseRec);
+    node._children = (node._children || []).concat(node.children);
+    node.children = null;
+  }
+}
+
+// فتح الأبناء المباشرين فقط لعقدة (لا يلمس الأحفاد)
+function expandDirectChildren(node) {
+  if (node._children && node._children.length) {
+    node.children = (node.children || []).concat(node._children);
+    node._children = null;
+  }
+}
+
+// فتح كل الأبناء والأحفاد تحت عقدة معينة حتى نهاية الشجرة الفرعية
+function expandSubtree(node) {
+  if (node._children && node._children.length) {
+    node.children = (node.children || []).concat(node._children);
+    node._children = null;
+  }
+  if (node.children) {
+    node.children.forEach(expandSubtree);
+  }
+}
+
+// يضمن أن المسار من الجذر إلى العقدة المعطاة مرئي (بدون توسيع إخوة الأجداد)
+// ينقل كل عقدة على المسار من _children لأبيه إلى children (دون لمس باقي الفروع).
+function ensurePathVisible(node) {
+  let cur = node;
+  while (cur.parent) {
+    const parent = cur.parent;
+    if (parent._children) {
+      const idx = parent._children.indexOf(cur);
+      if (idx >= 0) {
+        parent._children.splice(idx, 1);
+        parent.children = (parent.children || []).concat([cur]);
+        if (!parent._children.length) parent._children = null;
+      }
+    }
+    cur = parent;
+  }
+}
+
+// يطوي الكل ويُبقي فقط المسار من الجذر إلى عقدة محددة
+function collapseAllKeepPathTo(targetId) {
+  collapseAllDeep();
+  const target = findNodeAnywhere(targetId);
+  if (!target) return;
+  // نمشي من target لأعلى، ننقل كل ancestor من _children لأبيه إلى children
+  let cur = target;
+  while (cur.parent) {
+    const parent = cur.parent;
+    if (parent._children) {
+      const idx = parent._children.indexOf(cur);
+      if (idx >= 0) {
+        parent._children.splice(idx, 1);
+        parent.children = [cur]; // فقط المسار
+        if (!parent._children.length) parent._children = null;
+      }
+    }
+    cur = parent;
+  }
+}
+
+// ⬇️ أبناء المحدد — يُظهر كل أبناء وأحفاد المحدد حتى نهاية سلسلته، دون طي أي شيء ظاهر
+document.getElementById('btn-show-children').addEventListener('click', () => {
+  if (!selectedId) {
+    alert('اختر شخصاً أولاً من القائمة أو من الشجرة');
+    return;
+  }
+  const selNode = findNodeAnywhere(selectedId);
+  if (!selNode) return;
+  // تأكد من أن المحدد نفسه مرئي (بدون توسيع إخوة الأجداد)
+  ensurePathVisible(selNode);
+  // افتح كل الشجرة الفرعية تحت المحدد (أبناء + أحفاد حتى النهاية)
+  expandSubtree(selNode);
+  update();
+});
+
+// ⇲ عرض الكل — يلغي التركيز، يوسّع كل شيء، ويركّز الشجرة
+document.getElementById('btn-expand').addEventListener('click', () => {
+  focusMode = false; focusedId = null;
+  document.getElementById('btn-focus').classList.remove('active');
+  // استعادة أي حالة محفوظة بالتركيز (deep)
+  eachDeep(root, d => {
+    if (d._focusBackup) {
+      d.children = d._focusBackup.children || null;
+      d._children = d._focusBackup._children || null;
+      delete d._focusBackup;
+    }
+  });
+  expandAll();
+  update();
+  centerTree();
+});
+
+// ⇱ طي الكل — يُبقي فقط سلسلة نسب النبي ﷺ المباشرة (الجذر → النبي)
+document.getElementById('btn-collapse').addEventListener('click', () => {
+  focusMode = false; focusedId = null;
+  document.getElementById('btn-focus').classList.remove('active');
+  // نظف أي حفظ سابق (deep)
+  eachDeep(root, d => { delete d._focusBackup; });
+  collapseAllKeepPathTo('muhammad');
+  update();
+  centerTree();
+});
+
+// 🎯 تركيز — يُظهر فقط نسب المحدد مع النبي (أب/أم/زوجة)
+let focusMode = false;
+let focusedId = null;          // متوافقية — واحد من العناصر في focusedIds
+let focusedIds = new Set();    // مجموعة المُركَّز عليهم (يدعم التركيز المتعدد)
+let focusTitle = null;         // عنوان افتراضي للطباعة
+
+document.getElementById('btn-focus').addEventListener('click', () => {
+  if (!selectedId && !focusMode) {
+    alert('اختر شخصاً أولاً من القائمة أو من الشجرة');
+    return;
+  }
+  if (focusMode) {
+    // إلغاء التركيز
+    setFocus([], null);
+  } else {
+    // تركيز على الشخص المحدد فقط
+    setFocus([selectedId], null);
+  }
+});
+
+/**
+ * يضبط حالة التركيز على مجموعة من الأشخاص.
+ * @param {string[]} ids — قائمة معرّفات الأشخاص المطلوب تركيزهم
+ * @param {string|null} title — عنوان افتراضي للطباعة (يُستخدم مع مجموعة أو اسم واحد)
+ */
+function setFocus(ids, title) {
+  if (!ids || !ids.length) {
+    focusMode = false;
+    focusedId = null;
+    focusedIds = new Set();
+    focusTitle = null;
+  } else {
+    focusMode = true;
+    focusedIds = new Set(ids);
+    focusedId = ids[0]; // متوافقية مع الكود القديم
+    focusTitle = title;
+  }
+  document.getElementById('btn-focus').classList.toggle('active', focusMode);
+  // أظهر زر "إلغاء التركيز" فقط عندما يكون وضع التركيز مفعّل
+  const clearBtn = document.getElementById('btn-clear-focus');
+  if (clearBtn) clearBtn.style.display = focusMode ? '' : 'none';
+  applyFocus();
+  if (typeof syncFocusButtons === 'function') syncFocusButtons();
+  if (typeof updateExternalBox === 'function') updateExternalBox();
+}
+
+/**
+ * يحدّث مربع الأشخاص الخارجيين بناءً على مجموعة التركيز الحالية.
+ * - يظهر فقط لمن فئتهم 'external' أو 'quraish-not-in-tree'
+ * - يختفي عند إلغاء التركيز أو لو كل المركَّز عليهم داخل الشجرة
+ */
+function updateExternalBox() {
+  const box = document.getElementById('external-box');
+  const list = document.getElementById('external-list');
+  if (!box || !list) return;
+
+  if (!focusMode || !focusedIds.size) {
+    box.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  const external = [];      // من خارج قريش
+  const notInTree = [];     // من قريش لكن غير موجود في الشجرة
+  focusedIds.forEach(id => {
+    const cat = personCategory(id);
+    if (cat === 'external') external.push(id);
+    else if (cat === 'quraish-not-in-tree') notInTree.push(id);
+  });
+
+  if (!external.length && !notInTree.length) {
+    box.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  if (notInTree.length) {
+    html += `<div class="ext-group">
+      <div class="ext-group-title">من قريش — غير موجودين في الشجرة</div>
+      ${notInTree.map(renderExternalItem).join('')}
+    </div>`;
+  }
+  if (external.length) {
+    html += `<div class="ext-group">
+      <div class="ext-group-title">من خارج قريش</div>
+      ${external.map(renderExternalItem).join('')}
+    </div>`;
+  }
+  list.innerHTML = html;
+  box.style.display = '';
+}
+
+function renderExternalItem(id) {
+  const p = PEOPLE[id];
+  if (!p) return '';
+  const origin = p.origin || '—';
+  return `<div class="ext-person" onclick="selectPerson('${id}')">
+    <span class="ext-name">${p.nameAr}</span>
+    <span class="ext-origin">الأصل: ${origin}</span>
+  </div>`;
+}
+window.updateExternalBox = updateExternalBox;
+
+/**
+ * يعيد مسار ids من الشخص حتى الجذر عبر fatherId (السلسلة المباشرة فقط).
+ */
+function patrilinealChain(personId) {
+  const chain = [];
+  let cur = PEOPLE[personId];
+  while (cur) {
+    chain.push(cur.id);
+    cur = cur.fatherId ? PEOPLE[cur.fatherId] : null;
+  }
+  return chain;
+}
+
+function applyFocus() {
+  // استعادة أي حالة سابقة محفوظة
+  eachDeep(root, d => {
+    if (d._focusBackup) {
+      d.children = d._focusBackup.children || null;
+      d._children = d._focusBackup._children || null;
+      delete d._focusBackup;
+    }
+  });
+
+  if (!focusMode || !focusedIds.size) {
+    update();
+    centerTree();
+    return;
+  }
+
+  // اجمع ids التي يجب أن تظهر — السلسلة المباشرة فقط لكل شخص إلى النبي ﷺ
+  // (بدون إخوة في الطريق، بدون أزواج/أمهات/زوجات)
+  const visible = new Set();
+  const addPatrilinealToProphet = (id) => {
+    // أضف سلسلة الشخص الأبوية + سلسلة النبي الأبوية
+    // الاتحاد يُشكّل مسار مستقيم من الشخص ← أقرب جد مشترك ← النبي ﷺ
+    patrilinealChain(id).forEach(x => visible.add(x));
+    patrilinealChain('muhammad').forEach(x => visible.add(x));
+  };
+
+  // لكل شخص مُركَّز عليه: أضف سلسلته الأبوية فقط لو كان داخل الشجرة
+  // (الأشخاص الخارجيين يظهروا في مربع منفصل — لا يضاف لهم مسار)
+  focusedIds.forEach(id => {
+    const cat = personCategory(id);
+    if (cat === 'in-tree') {
+      addPatrilinealToProphet(id);
+    } else {
+      // للأشخاص الخارجيين/غير الموجودين: أظهر فقط نسب النبي المباشر ليكون للقارئ مرجع
+      patrilinealChain('muhammad').forEach(x => visible.add(x));
+    }
+  });
+
+  // تأكد من توسيع كل العقد على المسار
+  visible.forEach(id => {
+    ensureAncestorsExpanded(id);
+  });
+
+  // احفظ الحالة الحالية لكل عقدة قبل التعديل
+  eachDeep(root, d => {
+    d._focusBackup = {
+      children: d.children ? d.children.slice() : null,
+      _children: d._children ? d._children.slice() : null
+    };
+  });
+
+  // لكل عقدة موسّعة: أبقِ فقط الأبناء الموجودين في visible
+  eachDeep(root, d => {
+    if (d.children) {
+      const keep = d.children.filter(c => visible.has(c.data.id));
+      const hide = d.children.filter(c => !visible.has(c.data.id));
+      if (hide.length) {
+        d.children = keep.length ? keep : null;
+        d._children = (d._children || []).concat(hide);
+      }
+    }
+  });
+
+  update();
+  centerTree();
+}
+
+/**
+ * يضبط التركيز على مجموعة معروفة (العشرة المبشرين / أمهات المؤمنين / كفار قريش).
+ */
+/**
+ * تركيز على شخص:
+ * - إذا كان التركيز مفعّل بالفعل، يُبدّل (toggle) هذا الشخص داخل مجموعة التركيز (إضافة/إزالة).
+ * - إذا لم يكن في تركيز، يبدأ تركيز جديد بهذا الشخص فقط.
+ * - الضغط مع Ctrl/Cmd/Shift يُجبر دخول وضع الإضافة حتى لو لم يكن في تركيز.
+ */
+function focusOnePerson(id, event) {
+  const p = PEOPLE[id];
+  if (!p) return;
+
+  // سلوك افتراضي: لو فيه تركيز حالي، أي ضغطة تبدّل الشخص (إضافة/إزالة).
+  // لو مفيش تركيز، الضغطة تبدأ تركيزًا جديدًا بالشخص.
+  const inFocus = focusMode && focusedIds.size > 0;
+
+  let newSet;
+  if (inFocus) {
+    newSet = new Set(focusedIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+  } else {
+    newSet = new Set([id]);
+  }
+
+  // احسب العنوان الافتراضي
+  let title = null;
+  if (newSet.size === 1) {
+    title = `إلتقاء نسب ${PEOPLE[[...newSet][0]].nameAr} مع نسب النبي ﷺ`;
+  } else if (newSet.size > 1) {
+    title = `إلتقاء نسب مجموعة من ${newSet.size} أشخاص مع نسب النبي ﷺ`;
+  }
+  setFocus([...newSet], title);
+}
+window.focusOnePerson = focusOnePerson;
+
+/** يُحدّث الأزرار في القائمة لتعكس حالة التركيز الحالية */
+function syncFocusButtons() {
+  document.querySelectorAll('.cat-focus-btn').forEach(btn => {
+    const item = btn.closest('.cat-item');
+    const id = item && item.dataset.id;
+    btn.classList.toggle('active', focusedIds.has(id));
+  });
+  document.querySelectorAll('.group-focus-btn').forEach(btn => btn.classList.remove('active'));
+}
+
+function focusGroup(groupKey) {
+  let ids = [], title = '';
+  const all = Object.values(PEOPLE);
+  if (groupKey === 'ten') {
+    ids = all.filter(p => p.type === 'sahabi' && p.gender !== 'f' && p.rank).sort((a,b)=>a.rank-b.rank).map(p => p.id);
+    title = 'إلتقاء نسب العشرة المبشرين بالجنة مع نسب النبي ﷺ';
+  } else if (groupKey === 'mothers') {
+    ids = all.filter(p => p.type === 'mother').sort((a,b)=>(a.rank||99)-(b.rank||99)).map(p => p.id);
+    title = 'إلتقاء نسب أمهات المؤمنين مع نسب النبي ﷺ';
+  } else if (groupKey === 'kuffar') {
+    ids = all.filter(p => p.type === 'kafir').map(p => p.id);
+    title = 'إلتقاء نسب زعماء كفار قريش مع نسب النبي ﷺ';
+  }
+  setFocus(ids, title);
+}
+window.focusGroup = focusGroup;
+window.setFocus = setFocus;
+
+/* =========================================================
+   الطباعة — عبر iframe مستقل (طريقة موثوقة جدًا)
+   نستنسخ الـ SVG، نحسب له viewBox يغلف الشجرة كاملة،
+   ثم نحقنه في iframe مع CSS نظيف للطباعة
+   ========================================================= */
+function doPrint(subtitle) {
+  const nodes = root.descendants();
+  if (!nodes.length) return;
+
+  // احسب حدود الشجرة كاملة
+  const widths = nodes.map(n => n._nodeW || NODE_W);
+  const maxW = Math.max(...widths);
+  const xs = nodes.map(n => n.xpos);
+  const ys = nodes.map(n => n.ypos);
+  const pad = 50;
+  const minX = Math.min(...xs) - maxW/2 - pad;
+  const maxX = Math.max(...xs) + maxW/2 + pad;
+  const minY = Math.min(...ys) - NODE_H/2 - pad;
+  const maxY = Math.max(...ys) + NODE_H/2 + pad + 24;
+  const vw = maxX - minX;
+  const vh = maxY - minY;
+
+  // استنسخ SVG
+  const clone = svg.node().cloneNode(true);
+  clone.removeAttribute('width');
+  clone.removeAttribute('height');
+  clone.setAttribute('viewBox', `${minX} ${minY} ${vw} ${vh}`);
+  clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  // أزل transform الزوم من الـ group الرئيسي
+  const cloneG = clone.querySelector('g');
+  if (cloneG) cloneG.removeAttribute('transform');
+
+  // احتفظ بنسخة من ستايلات body لتحديد filled vs outlined
+  const bodyClass = document.body.className.replace(/\bsidebar-hidden\b|\blegend-hidden\b|\bpanel-open\b|\bhas-selection\b|\bprinting\b/g, '').trim();
+
+  // هل المفتاح مرئي على الشاشة؟
+  const showLegend = !document.body.classList.contains('legend-hidden');
+  const legendHtml = showLegend ? document.querySelector('.legend').outerHTML : '';
+
+  // بناء مربع الأشخاص الخارجيين للطباعة (إن وُجدوا في التركيز الحالي)
+  let externalHtml = '';
+  if (focusMode && focusedIds.size) {
+    const ext = [], notInTree = [];
+    focusedIds.forEach(id => {
+      const c = personCategory(id);
+      if (c === 'external') ext.push(id);
+      else if (c === 'quraish-not-in-tree') notInTree.push(id);
+    });
+    if (ext.length || notInTree.length) {
+      const renderRow = (id) => {
+        const p = PEOPLE[id];
+        if (!p) return '';
+        return `<div class="ext-row"><div class="ext-n">${p.nameAr}</div><div class="ext-o">${p.origin || '—'}</div></div>`;
+      };
+      externalHtml = `<aside class="print-external">
+        <div class="ext-hdr">خارج الشجرة</div>
+        ${notInTree.length ? `<div class="ext-grp"><div class="ext-grp-ttl">من قريش — غير موجودين في الشجرة</div>${notInTree.map(renderRow).join('')}</div>` : ''}
+        ${ext.length ? `<div class="ext-grp"><div class="ext-grp-ttl">من خارج قريش</div>${ext.map(renderRow).join('')}</div>` : ''}
+      </aside>`;
+    }
+  }
+
+  // HTML الـ iframe
+  const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>طباعة شجرة نسب قريش</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 8mm; }
+  :root {
+    --prophet: #059669;
+    --sahabi: #2563eb;
+    --kafir: #dc2626;
+    --ancestor: #7c3aed;
+    --neutral: #64748b;
+    --mother: #db2777;
+    --accent: #b45309;
+    --father-line: #2563eb;
+    --mother-line: #b45309;
+    --wife-line: #db2777;
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  html, body {
+    margin: 0; padding: 0;
+    font-family: 'Cairo', sans-serif;
+    background: #fff; color: #000;
+    height: 100%;
+    overflow: hidden;
+  }
+  .page {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
+  .print-title {
+    text-align: center;
+    flex-shrink: 0;
+    padding: 0 5mm 3mm 5mm;
+  }
+  .print-title h1 {
+    margin: 0 0 1mm 0;
+    font-size: 16pt; font-weight: 700;
+    word-wrap: break-word;
+    line-height: 1.3;
+  }
+  .print-title .subtitle {
+    margin: 0;
+    font-size: 11pt; color: #555; font-weight: 600;
+  }
+  .tree-row {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 4mm;
+    align-items: stretch;
+  }
+  .svg-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  /* مربع الأشخاص الخارجيين في الطباعة (بجوار الشجرة بدون تداخل) */
+  .print-external {
+    flex: 0 0 55mm;
+    border: 1.5px dashed #b45309;
+    border-radius: 4mm;
+    padding: 3mm 4mm;
+    background: #fff;
+    font-size: 9pt;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+  .print-external .ext-hdr {
+    font-size: 10pt; font-weight: 700;
+    color: #b45309;
+    text-align: center;
+    margin-bottom: 2mm;
+    padding-bottom: 1.5mm;
+    border-bottom: 1px solid #ddd;
+  }
+  .print-external .ext-grp { margin-top: 2.5mm; }
+  .print-external .ext-grp-ttl {
+    font-size: 8.5pt; font-weight: 700;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 1mm 2mm;
+    border-radius: 3px;
+    display: inline-block;
+    margin-bottom: 1.5mm;
+  }
+  .print-external .ext-row {
+    padding: 1mm 0;
+    border-bottom: 1px dotted #ddd;
+  }
+  .print-external .ext-row:last-child { border-bottom: none; }
+  .print-external .ext-n {
+    font-weight: 700; font-size: 9pt;
+    color: #000;
+  }
+  .print-external .ext-o {
+    font-size: 8pt; color: #555;
+    margin-top: 0.5mm;
+    line-height: 1.3;
+  }
+  svg {
+    width: 100%; height: 100%;
+    display: block;
+  }
+  /* نمط البطاقات */
+  .node rect { stroke-width: 2px; }
+  .node text {
+    font-family: 'Cairo', sans-serif;
+    font-weight: 600;
+    pointer-events: none;
+  }
+  body.style-filled .node text { fill: #fff; }
+  body.style-outlined .node text { fill: var(--node-color, #111); }
+  body.style-outlined .node .name-en { fill: var(--node-color, #444); opacity: 0.85; }
+  .node .name-en { font-family: 'Segoe UI', sans-serif; }
+  .link { fill: none; stroke: #555; stroke-width: 1.2px; }
+  .relation-line { fill: none; stroke-width: 2.5px; stroke-dasharray: 6 4; }
+  .relation-line.active { opacity: 1; }
+  .relation-line.mother { stroke: #b45309; }
+  .relation-line.wife { stroke: #db2777; }
+  .relation-line.father { stroke: #2563eb; }
+  .toggle-btn circle { fill: #fff; stroke-width: 2px; }
+  .toggle-btn text { font-size: 22px; font-weight: bold; }
+
+  /* المفتاح أفقي في أسفل الصفحة تحت الشجرة */
+  .legend {
+    position: static;
+    margin: 2mm 0 0 0;
+    padding: 2mm 4mm;
+    background: #fff;
+    border: 1px solid #999;
+    border-radius: 6px;
+    font-size: 8.5pt;
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex; flex-wrap: wrap; align-items: center;
+    gap: 4mm 8mm;
+    justify-content: center;
+    page-break-inside: avoid;
+    flex-shrink: 0;
+  }
+  .legend-close { display: none !important; }
+  .legend-title {
+    font-weight: 700; color: #b45309;
+    margin: 0 2mm 0 0;
+    white-space: nowrap;
+  }
+  .legend-row {
+    display: flex; align-items: center; gap: 4px;
+    margin: 0; white-space: nowrap;
+  }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 14px; height: 2.5px; flex-shrink: 0; }
+  /* تجاهل الـ divider الذي يفصل مفاتيح الخطوط داخل المفتاح */
+  .legend > div[style*="margin-top"] {
+    display: contents !important;
+    border-top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+</style>
+</head>
+<body class="${bodyClass}">
+  <div class="page">
+    <div class="print-title">
+      ${subtitle ? `<h1>${escapeHtml(subtitle)}</h1>` : ''}
+      <div class="subtitle">شجرة نسب قريش</div>
+    </div>
+    <div class="tree-row">
+      <div class="svg-wrap">${clone.outerHTML}</div>
+      ${externalHtml}
+    </div>
+    ${legendHtml}
+  </div>
+</body>
+</html>`;
+
+  // افتح iframe مخفي واطبع منه
+  let iframe = document.getElementById('print-frame');
+  if (iframe) iframe.remove();
+  iframe = document.createElement('iframe');
+  iframe.id = 'print-frame';
+  iframe.style.cssText = 'position:fixed;right:-9999px;top:-9999px;width:297mm;height:210mm;border:0;';
+  document.body.appendChild(iframe);
+
+  const idoc = iframe.contentDocument || iframe.contentWindow.document;
+  idoc.open();
+  idoc.write(html);
+  idoc.close();
+
+  // انتظر تحميل الخطوط وال SVG ثم اطبع
+  setTimeout(() => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } catch(e) { console.error(e); }
+    // إزالة الـ iframe بعد الطباعة
+    setTimeout(() => iframe.remove(), 1000);
+  }, 600);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+document.getElementById('btn-print').addEventListener('click', () => {
+  openPrintDialog();
+});
+
+// زر المساعدة
+document.getElementById('btn-help').addEventListener('click', () => {
+  document.getElementById('help-dialog').style.display = 'flex';
+});
+
+// فتح حوار الطباعة مع ملء عنوان افتراضي (عنوان رئيسي) لو وضع التركيز مفعّل
+function openPrintDialog() {
+  const dialog = document.getElementById('print-dialog');
+  const input = document.getElementById('print-subtitle');
+  let defaultTitle = '';
+  if (focusMode) {
+    // استخدم العنوان المحفوظ من setFocus (مجموعة أو شخص)
+    if (focusTitle) {
+      defaultTitle = focusTitle;
+    } else if (focusedIds.size === 1) {
+      const p = PEOPLE[[...focusedIds][0]];
+      if (p) defaultTitle = `إلتقاء نسب ${p.nameAr} مع نسب النبي ﷺ`;
+    } else if (focusedIds.size > 1) {
+      defaultTitle = `إلتقاء نسب مجموعة من ${focusedIds.size} أشخاص مع نسب النبي ﷺ`;
+    }
+  }
+  input.value = defaultTitle;
+  dialog.style.display = 'flex';
+  setTimeout(() => input.focus(), 50);
+}
+
+document.getElementById('btn-do-print').addEventListener('click', () => {
+  const sub = document.getElementById('print-subtitle').value.trim();
+  document.getElementById('print-dialog').style.display = 'none';
+  setTimeout(() => doPrint(sub), 100);
+});
+
+// ☰ إظهار/إخفاء قائمة الأسماء الجانبية
+document.getElementById('btn-toggle-sidebar').addEventListener('click', (e) => {
+  document.body.classList.toggle('sidebar-hidden');
+  const isShown = !document.body.classList.contains('sidebar-hidden');
+  e.currentTarget.classList.toggle('active', isShown);
+  setTimeout(centerTree, 260);
+});
+
+// 🗂️ إظهار/إخفاء مفتاح الشجرة
+function setLegendVisible(show) {
+  document.body.classList.toggle('legend-hidden', !show);
+  document.getElementById('btn-toggle-legend').classList.toggle('active', show);
+}
+document.getElementById('btn-toggle-legend').addEventListener('click', () => {
+  setLegendVisible(document.body.classList.contains('legend-hidden'));
+});
+function hideLegend() { setLegendVisible(false); }
+window.hideLegend = hideLegend;
+
+// 🌐 تبديل لغة العرض على العقد
+document.getElementById('btn-lang').addEventListener('click', (e) => {
+  displayLang = (displayLang === 'ar') ? 'en' : 'ar';
+  localStorage.setItem('quraish_lang', displayLang);
+  e.currentTarget.textContent = displayLang === 'ar' ? '🌐 عربي' : '🌐 English';
+  update();
+});
+// تهيئة نص الزر عند التحميل
+document.getElementById('btn-lang').textContent = displayLang === 'ar' ? '🌐 عربي' : '🌐 English';
+
+// 🎨 تبديل نمط ألوان بطاقات الأسماء
+document.getElementById('btn-style').addEventListener('click', () => {
+  cardStyle = (cardStyle === 'filled') ? 'outlined' : 'filled';
+  localStorage.setItem('quraish_style', cardStyle);
+  document.body.classList.remove('style-filled', 'style-outlined');
+  document.body.classList.add('style-' + cardStyle);
+  update();
+});
+
+// 🕌 اختيار النبي ﷺ وتركيز الشجرة عليه بزوم متوسط
+document.getElementById('btn-prophet').addEventListener('click', () => {
+  const muhNode = findNodeAnywhere('muhammad');
+  if (!muhNode) return;
+  // تأكد من أن النبي مرئي (بدون لمس الفروع الأخرى)
+  ensurePathVisible(muhNode);
+  update();
+  // زوم متوسط مع توسيط العقدة في الشاشة
+  const n = findNodeAnywhere('muhammad');
+  if (!n) return;
+  const k = 1.0; // زوم متوسط
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  const tx = w/2 - n.xpos * k;
+  const ty = h/2 - n.ypos * k;
+  svg.transition().duration(500).call(
+    zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(k)
+  );
+  selectPerson('muhammad');
+});
+
+// Initial render
+update();
+centerTree();
+
+// Expose for HTML onclick
+window.selectPerson = selectPerson;
+window.closePanel = closePanel;
+window.minimizePanel = minimizePanel;
+window.restorePanel = restorePanel;
+window.clearSelection = clearSelection;
+window.switchTab = switchTab;
+window.selectPersonFromSidebar = selectPersonFromSidebar;
+</script>
+
+</body>
+</html>
