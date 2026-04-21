@@ -91,11 +91,217 @@
   .controls button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
   #svg-container {
-    position: absolute; top: var(--header-h, 76px); bottom: 0; left: 280px; right: 0;
+    position: absolute; top: var(--header-h, 76px); bottom: 0; left: 0; right: 280px;
     overflow: hidden;
     background: var(--bg);
-    transition: left 0.25s ease;
+    transition: right 0.25s ease;
     min-height: 200px;
+  }
+  /* لا قائمة مرئية على اليمين → الشجرة تأخذ كامل العرض */
+  body.sidebar-hidden:not(.outline-open) #svg-container { right: 0; }
+  /* عند فتح العرض المبسط — الشجرة تترك له مكانًا على اليمين (العرض يحدد من المتغير) */
+  body.outline-open #svg-container { right: var(--outline-w, 360px); }
+
+  /* ===== العرض المبسط (Outline) — panel على اليمين ===== */
+  :root { --outline-w: 360px; }
+  #outline-view {
+    position: fixed; top: var(--header-h, 76px); bottom: 0;
+    right: 0;
+    width: var(--outline-w, 360px);
+    min-width: 260px; max-width: 90vw;
+    background: var(--panel);
+    border-left: 1px solid var(--panel-2);
+    box-shadow: -4px 0 12px rgba(15,23,42,0.08);
+    z-index: 28;
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+  body.outline-open #outline-view { transform: translateX(0); }
+
+  /* مقبض تغيير حجم اللوحة */
+  .outline-resize-handle {
+    position: absolute; top: 0; bottom: 0; left: -3px;
+    width: 6px; cursor: ew-resize;
+    z-index: 2;
+    background: transparent;
+  }
+  .outline-resize-handle:hover { background: rgba(180, 83, 9, 0.2); }
+  .outline-resize-handle.dragging { background: rgba(180, 83, 9, 0.4); }
+
+  .outline-controls {
+    flex-shrink: 0;
+    background: var(--panel);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--panel-2);
+  }
+  #outline-search {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--panel-2);
+    border-radius: 6px;
+    font-family: inherit; font-size: 13px;
+    background: var(--panel-3); color: var(--text);
+    box-sizing: border-box;
+  }
+  #outline-search:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .outline-filters {
+    display: flex; flex-wrap: wrap; gap: 3px;
+    margin-top: 6px;
+  }
+  .outline-filters button {
+    padding: 3px 8px;
+    border: 1px solid var(--panel-2);
+    border-radius: 10px;
+    background: var(--panel-3);
+    color: var(--text);
+    font-family: inherit; font-size: 11px;
+    cursor: pointer;
+  }
+  .outline-filters button:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .outline-filters button.active {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .outline-quick-actions {
+    display: flex; gap: 4px; margin-top: 6px;
+  }
+  .outline-quick-actions button {
+    padding: 3px 7px; font-size: 10px;
+    border: 1px solid var(--panel-2);
+    background: var(--panel); color: var(--text);
+    border-radius: 4px; cursor: pointer;
+    font-family: inherit;
+  }
+  .outline-quick-actions button:hover { background: var(--accent-soft); }
+
+  #outline-tree {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0 12px;
+    font-size: 13px;
+  }
+
+  /* ===== سطر outline بنمط hierarchical list كلاسيكي (تتابع مضغوط) ===== */
+  .outline-item {
+    display: flex; align-items: center;
+    padding: 1px 8px;
+    cursor: default;
+    line-height: 1.2;
+    user-select: none;
+    position: relative;
+  }
+  .outline-item:hover { background: var(--panel-3); }
+  .outline-item.selected {
+    background: var(--accent-soft);
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+  }
+  .outline-item.focused-active {
+    background: rgba(245, 158, 11, 0.12);
+    font-weight: 700;
+  }
+  .outline-item.hidden { display: none; }
+
+  .outline-indent { flex-shrink: 0; }
+  /* زر +/- بنمط classic tree view */
+  .outline-chev {
+    width: 16px; height: 16px;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 11px; font-weight: 700;
+    font-family: monospace, 'Cairo';
+    line-height: 1;
+    border: 1px solid var(--panel-2);
+    background: #fff;
+    border-radius: 2px;
+    margin: 0 1px;
+  }
+  .outline-chev:hover { border-color: var(--accent); color: var(--accent); }
+  .outline-chev.leaf {
+    cursor: default; visibility: hidden;
+  }
+  .outline-type-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+    margin: 0 5px 0 3px;
+  }
+  .outline-name {
+    flex: 1; min-width: 0;
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: var(--text);
+    cursor: pointer;
+    padding: 3px 2px;
+  }
+  .outline-focus-btn {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    font-size: 11px;
+    opacity: 0.35;
+    transition: all 0.15s;
+    padding: 0;
+  }
+  .outline-item:hover .outline-focus-btn { opacity: 1; }
+  .outline-focus-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .outline-focus-btn.active {
+    opacity: 1;
+    background: var(--accent); color: #fff;
+    border-color: var(--accent);
+  }
+  .outline-marker {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 13px; height: 13px;
+    font-size: 9px; font-weight: 700;
+    margin-right: 3px;
+    flex-shrink: 0;
+  }
+  .outline-marker.external { color: #92400e; }
+  .outline-marker.notintree { color: #3730a3; }
+  .outline-rank {
+    font-size: 9px; font-weight: 700;
+    color: var(--muted);
+    min-width: 14px; text-align: center;
+    flex-shrink: 0;
+  }
+  .outline-empty {
+    text-align: center; color: var(--muted);
+    padding: 20px; font-size: 12px;
+  }
+  /* قسم الأشخاص الخارجيين */
+  #outline-external {
+    flex-shrink: 0;
+    padding: 8px 10px 12px;
+    border-top: 1px dashed var(--accent);
+    background: #fef9e7;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .outline-ext-header {
+    font-size: 11px; font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  #outline-external .outline-item { padding: 1px 0; }
+
+  /* على الموبايل: outline panel يظهر كـ drawer كامل */
+  @media (max-width: 768px) {
+    #outline-view {
+      top: 0; bottom: 0;
+      width: 90%; max-width: 360px;
+      z-index: 56;
+    }
+    body.outline-open::after {
+      content: ''; position: fixed; inset: 0;
+      background: rgba(15,23,42,0.45); z-index: 55;
+    }
   }
   /* ===== مربع الأشخاص الخارجيين ===== */
   #external-box {
@@ -155,19 +361,22 @@
     display: block;
   }
   /* حالة إخفاء القائمة الجانبية */
-  body.sidebar-hidden #svg-container { left: 0; }
   body.sidebar-hidden #left-sidebar {
-    transform: translateX(-100%);
+    transform: translateX(100%);
+  }
+  /* إخفاء السايدبار عند فتح العرض المبسط (mutual exclusion) */
+  body.outline-open #left-sidebar {
+    transform: translateX(100%);
   }
   #left-sidebar { transition: transform 0.25s ease; }
   svg { width: 100%; height: 100%; cursor: grab; background: var(--bg); }
   svg:active { cursor: grabbing; }
 
-  /* ===== Left sidebar (Tabs) ===== */
+  /* ===== قائمة الأسماء الجانبية (الآن على اليمين) ===== */
   #left-sidebar {
-    position: fixed; top: var(--header-h, 76px); bottom: 0; left: 0;
+    position: fixed; top: var(--header-h, 76px); bottom: 0; right: 0;
     width: 280px; background: var(--panel);
-    border-right: 1px solid var(--panel-2);
+    border-left: 1px solid var(--panel-2);
     z-index: 30;
     box-shadow: var(--shadow);
     display: flex; flex-direction: column;
@@ -198,6 +407,22 @@
   .sidebar-search input:focus {
     outline: none; border-color: var(--accent);
     background: #fff;
+  }
+  /* تمييز الجزء المطابق من الاسم في القائمة */
+  mark.search-hl {
+    background: #fde047;
+    color: #713f12;
+    padding: 0 2px;
+    border-radius: 3px;
+    font-weight: 800;
+  }
+  /* عندما تاب فيه نتائج بحث */
+  .tab.has-results {
+    background: var(--accent-soft);
+  }
+  .tab.has-results .count {
+    background: var(--accent);
+    color: #fff;
   }
   .tabs {
     display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -326,6 +551,20 @@
     display: flex; align-items: center; justify-content: space-between;
     gap: 6px;
   }
+  /* عنوان فرعي ثانوي (داخل عنوان رئيسي) — مثل "الخلفاء الراشدون" تحت "العشرة المبشرين" */
+  .cat-sub-subheader {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 6px;
+    font-size: 10px; color: #6b4410; font-weight: 700;
+    padding: 4px 22px 3px;
+    background: rgba(252, 211, 77, 0.25);
+    border-right: 3px solid var(--accent);
+    letter-spacing: 0.3px;
+  }
+  .cat-sub-subheader .group-focus-btn {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
   .group-focus-btn {
     background: var(--accent); color: #fff; border: none;
     padding: 3px 8px; border-radius: 6px; cursor: pointer;
@@ -377,6 +616,17 @@
   .node.selected rect {
     stroke: var(--accent) !important;
     stroke-width: 4px;
+  }
+  /* جذر الذرية (أبناء المحدد) — تمييز خاص بحدود بنفسجية عريضة */
+  .node.subtree-root rect {
+    stroke: #6d28d9 !important;
+    stroke-width: 5px !important;
+    stroke-dasharray: none;
+    filter: drop-shadow(0 0 8px rgba(109, 40, 217, 0.45)) drop-shadow(0 2px 4px rgba(15,23,42,0.15));
+  }
+  .node.subtree-root.selected rect {
+    stroke: #6d28d9 !important;
+    stroke-width: 6px !important;
   }
   .node text {
     pointer-events: none;
@@ -444,16 +694,16 @@
     opacity: 0.85;
   }
 
-  /* Side panel - RIGHT side now */
+  /* Side panel — على اليسار (لا يتعارض مع بانلات اليمين: السايدبار والعرض الهرمي) */
   #side-panel {
-    position: fixed; top: var(--header-h, 76px); bottom: 0; right: 0;
+    position: fixed; top: var(--header-h, 76px); bottom: 0; left: 0;
     width: 400px; background: var(--panel);
-    border-left: 1px solid var(--panel-2);
+    border-right: 1px solid var(--panel-2);
     overflow-y: auto; padding: 20px;
-    transform: translateX(100%);
+    transform: translateX(-100%);
     transition: transform 0.3s ease;
     z-index: 40;
-    box-shadow: -4px 0 12px rgba(15,23,42,0.06);
+    box-shadow: 4px 0 12px rgba(15,23,42,0.06);
   }
   #side-panel.open { transform: translateX(0); }
   #side-panel .panel-header-actions {
@@ -894,16 +1144,17 @@
     /* إخفاء البانل الجانبي الأصلي تمامًا على الموبايل (محتواه يتدمج في Peek details) */
     #side-panel { display: none !important; }
 
-    /* ===== Names Drawer ===== */
+    /* ===== Names Drawer (ينزلق من اليمين) ===== */
     #left-sidebar {
       top: 0; bottom: 0;
+      right: 0; left: auto;
       width: 85%; max-width: 320px;
       z-index: 55;
       box-shadow: -2px 0 16px rgba(15,23,42,0.3);
-      transform: translateX(-100%);
+      transform: translateX(100%);
     }
-    body:not(.sidebar-hidden) #left-sidebar { transform: translateX(0); }
-    body:not(.sidebar-hidden)::after {
+    body:not(.sidebar-hidden):not(.outline-open) #left-sidebar { transform: translateX(0); }
+    body:not(.sidebar-hidden):not(.outline-open)::after {
       content: ''; position: fixed; inset: 0;
       background: rgba(15,23,42,0.45); z-index: 54;
     }
@@ -1077,8 +1328,8 @@
   <button class="mobile-icon-btn" id="m-sidebar-btn" onclick="toggleMobileSidebar()" style="display:none" title="قائمة الأسماء">☰</button>
   <div class="controls">
     <div class="btn-group">
-      <button id="btn-marriage" title="إظهار خطوط الزواج للشخص المحدد">💍 خط الزواج</button>
-      <button id="btn-mother-line" title="إظهار خط يربط الشخص المحدد بأمه إن كانت في الشجرة">🏠 خط الأم</button>
+      <button id="btn-marriage" class="active" title="إظهار خطوط الزواج للشخص المحدد">💍 خط الزواج</button>
+      <button id="btn-mother-line" class="active" title="إظهار خط يربط الشخص المحدد بأمه إن كانت في الشجرة">🏠 خط الأم</button>
       <button id="btn-focus" title="إظهار نسب الشخص المحدد فقط مع النبي ﷺ" style="display:none">🎯 تركيز على المحدد</button>
       <button id="btn-clear-focus" title="إلغاء كل أوضاع التركيز" onclick="setFocus([], null)" style="display:none">❌ إلغاء التركيز</button>
       <button id="btn-show-children" title="إظهار جميع أبناء وأحفاد الشخص المحدد">⬇️ أبناء المحدد</button>
@@ -1092,10 +1343,15 @@
     </div>
     <div class="btn-divider"></div>
     <div class="btn-group">
+      <button id="btn-toggle-sidebar" title="إظهار/إخفاء قائمة الأسماء المصنّفة" class="active">☰ قائمة الأسماء</button>
+      <button id="btn-view-outline" title="إظهار/إخفاء الشجرة الهرمية المضغوطة">📂 الشجرة الهرمية</button>
+      <button id="btn-view-tree" style="display:none">🌳 شجرة النسب</button>
+    </div>
+    <div class="btn-divider"></div>
+    <div class="btn-group">
       <button id="btn-lang" title="تبديل اللغة المعروضة على عقد الشجرة">🌐 عربي</button>
       <button id="btn-style" title="تبديل نمط ألوان بطاقات الأسماء">🎨 النمط</button>
       <button id="btn-toggle-legend" title="إظهار/إخفاء مفتاح الشجرة" class="active">🗂️ المفتاح</button>
-      <button id="btn-toggle-sidebar" title="إظهار/إخفاء قائمة الأسماء" class="active">☰ القائمة</button>
       <button id="btn-help" title="دليل استخدام التطبيق">❓ المساعدة</button>
       <button id="btn-print" title="طباعة ما هو ظاهر على الشاشة">🖨️ طباعة</button>
     </div>
@@ -1285,6 +1541,31 @@
   </div>
 </div>
 
+<!-- ===== العرض المبسط (Outline) — panel على اليمين ===== -->
+<aside id="outline-view">
+  <div class="outline-resize-handle" id="outline-resize" title="اسحب لتغيير العرض"></div>
+  <div class="outline-controls">
+    <input type="search" id="outline-search" placeholder="🔍 ابحث بالاسم..." autocomplete="off" />
+    <div class="outline-filters">
+      <button data-filter="all" class="active">الكل</button>
+      <button data-filter="sahabi">🕋 صحابي</button>
+      <button data-filter="mother">🌸 أم مؤمنين</button>
+      <button data-filter="kafir">⚔️ كفار</button>
+      <button data-filter="ancestor">🌳 أجداد</button>
+      <button data-filter="neutral">👤 أخرى</button>
+    </div>
+    <div class="outline-quick-actions">
+      <button id="outline-expand-all" title="توسيع كل الأسطر">⇲ الكل</button>
+      <button id="outline-collapse-all" title="طي الكل">⇱ الكل</button>
+    </div>
+  </div>
+  <div id="outline-tree"></div>
+  <div id="outline-external">
+    <div class="outline-ext-header">من خارج قريش</div>
+    <div id="outline-external-list"></div>
+  </div>
+</aside>
+
 <aside id="side-panel">
   <div class="panel-header-actions">
     <button class="panel-btn" title="تصغير إلى زر عائم" onclick="minimizePanel()">⤵ تصغير</button>
@@ -1307,8 +1588,8 @@
     <div class="peek-actions">
       <button onclick="peekFocus()" id="peek-btn-focus" title="تركيز">🎯</button>
       <button onclick="peekChildren()" title="أبناء">⬇️</button>
-      <button onclick="peekMother()" id="peek-btn-mother" title="خط الأم">🏠</button>
-      <button onclick="peekMarriage()" id="peek-btn-marriage" title="خط الزواج">💍</button>
+      <button onclick="peekMother()" id="peek-btn-mother" class="active" title="خط الأم">🏠</button>
+      <button onclick="peekMarriage()" id="peek-btn-marriage" class="active" title="خط الزواج">💍</button>
       <button onclick="peekExpand()" title="عرض التفاصيل">ℹ️</button>
       <button onclick="clearSelection()" class="peek-btn-close" title="إلغاء">✕</button>
     </div>
@@ -1355,6 +1636,9 @@ const PEOPLE = {
   fihr: { id: 'fihr', nameAr: 'فِهْر (قريش)', nameEn: 'Fihr (Quraysh)', type: 'ancestor',
     role: 'الجد الجامع لقبيلة قريش، ومنه أخذت القبيلة اسمها.', fatherId: null },
   ghalib: { id: 'ghalib', nameAr: 'غالب', nameEn: 'Ghalib', type: 'ancestor', fatherId: 'fihr' },
+  // أخو غالب — جدّ بني الحارث بن فهر (منهم أبو عبيدة بن الجراح)
+  al_harith_fihr: { id: 'al_harith_fihr', nameAr: 'الحارث بن فِهْر', nameEn: 'Al-Harith ibn Fihr', type: 'neutral', fatherId: 'fihr',
+    role: 'أخو غالب وجدّ بني الحارث بن فهر، ومنهم أبو عبيدة بن الجراح أمين هذه الأمة.' },
   luayy: { id: 'luayy', nameAr: 'لؤي', nameEn: "Lu'ayy", type: 'ancestor', fatherId: 'ghalib' },
   kab: { id: 'kab', nameAr: 'كعب', nameEn: "Ka'b", type: 'ancestor', fatherId: 'luayy' },
   murrah: { id: 'murrah', nameAr: 'مُرَّة', nameEn: 'Murrah', type: 'ancestor', fatherId: 'kab' },
@@ -1396,6 +1680,14 @@ const PEOPLE = {
   abd_uzza: { id: 'abd_uzza', nameAr: 'عبد العزى', nameEn: "Abd al-'Uzza", type: 'neutral', fatherId: 'qusayy',
     role: 'جدّ خديجة بنت خويلد والزبير بن العوام رضي الله عنهما.' },
 
+  // أخو عبد مناف — جدّ بني عبد الدار حملة لواء قريش (منهم مصعب بن عمير، عثمان بن طلحة)
+  abd_al_dar: { id: 'abd_al_dar', nameAr: 'عبد الدار', nameEn: 'Abd al-Dar', type: 'neutral', fatherId: 'qusayy',
+    role: 'أخو عبد مناف، أوصاه قصي بالحجابة واللواء والسقاية ودار الندوة. جدّ بني عبد الدار حملة لواء قريش في بدر وأحد، ومنهم مصعب بن عمير سفير الإسلام، وعثمان بن طلحة حامل مفتاح الكعبة.' },
+  umayr_musab: { id: 'umayr_musab', nameAr: 'عمير بن هاشم', nameEn: 'Umayr ibn Hashim', type: 'neutral', fatherId: 'abd_al_dar',
+    role: 'والد مصعب بن عمير سفير الإسلام (مع تلخيص أجيال بين عبد الدار وعمير).' },
+  talha_abi_talha: { id: 'talha_abi_talha', nameAr: 'طلحة بن أبي طلحة', nameEn: "Talha ibn Abi Talha", type: 'neutral', fatherId: 'abd_al_dar',
+    role: 'من بني عبد الدار — والد عثمان بن طلحة حامل مفتاح الكعبة (مع تلخيص أجيال).' },
+
   // بنو عبد مناف
   hashim: { id: 'hashim', nameAr: 'هاشم', nameEn: 'Hashim', type: 'ancestor', fatherId: 'abd_manaf',
     role: 'ارتبط اسمه بالريادة الاقتصادية، نظّم بشكل مؤسسي "رحلتي الشتاء والصيف". منح هذا التنظيم قبيلة النبي ثقلًا اقتصاديًا وسياسيًا كبيرًا، وأعطى بني هاشم وجاهةً سهّلت قبول العرب لرسالة النبي ﷺ.' },
@@ -1409,7 +1701,15 @@ const PEOPLE = {
     role: 'جدّ بني أمية.' },
   abu_al_as: { id: 'abu_al_as', nameAr: 'أبو العاص بن أمية', nameEn: "Abu al-'As ibn Umayya", type: 'neutral', fatherId: 'umayyah' },
   affan: { id: 'affan', nameAr: 'عفان بن أبي العاص', nameEn: "Affan ibn Abi al-'As", type: 'neutral', fatherId: 'abu_al_as' },
+  // أخ عفان — جدّ أبي العاص بن الربيع (زوج زينب بنت النبي ﷺ)
+  al_rabi_umawi: { id: 'al_rabi_umawi', nameAr: 'الربيع بن عبد العزى', nameEn: "Al-Rabi' ibn Abd al-'Uzza", type: 'neutral', fatherId: 'abu_al_as',
+    role: 'والد أبي العاص بن الربيع زوج زينب بنت النبي ﷺ (مع تلخيص أجيال).' },
   harb: { id: 'harb', nameAr: 'حَرْب بن أمية', nameEn: 'Harb ibn Umayya', type: 'neutral', fatherId: 'umayyah' },
+  // أخ حرب وأبي العاص — جدّ سعيد بن العاص وأبناؤه (منهم خالد بن سعيد)
+  al_as_umayya: { id: 'al_as_umayya', nameAr: 'العاص بن أمية', nameEn: "Al-'As ibn Umayya", type: 'neutral', fatherId: 'umayyah',
+    role: 'جدّ سعيد بن العاص من المسلمين الأوائل (مع تلخيص أجيال).' },
+  saeed_al_as: { id: 'saeed_al_as', nameAr: 'سعيد بن العاص', nameEn: "Sa'id ibn al-'As", type: 'sahabi', fatherId: 'al_as_umayya',
+    role: 'والد خالد بن سعيد. أسلم قديماً.' },
 
   // بنو عبد العزى (خديجة والزبير)
   asad: { id: 'asad', nameAr: 'أسد بن عبد العزى', nameEn: "Asad ibn Abd al-'Uzza", type: 'neutral', fatherId: 'abd_uzza' },
@@ -1459,6 +1759,9 @@ const PEOPLE = {
   zuhrah: { id: 'zuhrah', nameAr: 'زهرة بن كلاب', nameEn: 'Zuhrah ibn Kilab', type: 'neutral', fatherId: 'kilab',
     role: 'أخو قصي بن كلاب، جدّ أمهات في قريش.' },
   abd_manaf_zuhri: { id: 'abd_manaf_zuhri', nameAr: 'عبد مناف بن زهرة', nameEn: 'Abd Manaf ibn Zuhrah', type: 'neutral', fatherId: 'zuhrah' },
+  // فرع بني الحارث بن زهرة (عبد الرحمن بن عوف)
+  al_harith_zuhri: { id: 'al_harith_zuhri', nameAr: 'الحارث بن زهرة', nameEn: 'Al-Harith ibn Zuhrah', type: 'neutral', fatherId: 'zuhrah',
+    role: 'أخو عبد مناف بن زهرة، جدّ عبد الرحمن بن عوف من العشرة المبشرين (مع تلخيص أجيال بين الحارث وعوف).' },
   wahb: { id: 'wahb', nameAr: 'وهب بن عبد مناف', nameEn: 'Wahb ibn Abd Manaf', type: 'neutral', fatherId: 'abd_manaf_zuhri',
     role: 'والد آمنة أم النبي ﷺ. كان سيّدًا في بني زهرة.' },
   amina: { id: 'amina', nameAr: 'آمنة بنت وهب', nameEn: 'Amina bint Wahb', type: 'neutral', gender: 'f', fatherId: 'wahb',
@@ -1596,12 +1899,14 @@ const PEOPLE = {
     role: 'من العشرة المبشرين بالجنة. كان إسلامه سببًا في إسلام عمر بن الخطاب (كان زوج أخته فاطمة بنت الخطاب). من بني عدي (بطن عمر).' },
 
   // 9. عبد الرحمن بن عوف
-  awf: { id: 'awf', nameAr: 'عوف بن عبد عوف', nameEn: 'Awf ibn Abd Awf', type: 'neutral', fatherId: null },
+  awf: { id: 'awf', nameAr: 'عوف بن عبد عوف', nameEn: 'Awf ibn Abd Awf', type: 'neutral', fatherId: 'al_harith_zuhri',
+    role: 'والد عبد الرحمن بن عوف من العشرة المبشرين بالجنة (مع تلخيص أجيال بين الحارث وعوف).' },
   abd_ar_rahman: { id: 'abd_ar_rahman', nameAr: 'عبد الرحمن بن عوف', nameEn: 'Abd al-Rahman ibn Awf', type: 'sahabi', rank: 7, fatherId: 'awf',
     role: 'من السابقين الأولين، ومن العشرة المبشرين. تاجر كبير أنفق أمواله في سبيل الله. من بني زهرة.' },
 
   // 10. أبو عبيدة بن الجراح
-  al_jarrah: { id: 'al_jarrah', nameAr: 'عبد الله بن الجراح', nameEn: 'Abdullah ibn al-Jarrah', type: 'neutral', fatherId: null },
+  al_jarrah: { id: 'al_jarrah', nameAr: 'عبد الله بن الجراح', nameEn: 'Abdullah ibn al-Jarrah', type: 'neutral', fatherId: 'al_harith_fihr',
+    role: 'والد أبي عبيدة بن الجراح أمين الأمة، من بني الحارث بن فهر (مع تلخيص أجيال بين الحارث والجراح).' },
   abu_ubayda: { id: 'abu_ubayda', nameAr: 'أبو عبيدة بن الجراح', nameEn: "Abu 'Ubayda ibn al-Jarrah", type: 'sahabi', rank: 10, fatherId: 'al_jarrah',
     role: 'أمين هذه الأمة كما لقّبه النبي ﷺ. من العشرة المبشرين. فاتح الشام. توفي في طاعون عمواس سنة 18هـ.' },
 
@@ -1669,7 +1974,41 @@ const PEOPLE = {
 
   // أم كلثوم بنت علي — حفيدة النبي ﷺ، زوجة عمر بن الخطاب
   umm_kulthum_ali: { id: 'umm_kulthum_ali', nameAr: 'أم كلثوم بنت علي', nameEn: 'Umm Kulthum bint Ali', type: 'sahabi', gender: 'f', fatherId: 'ali', motherId: 'fatima',
-    role: 'بنت علي وفاطمة، وحفيدة النبي ﷺ. تزوجها أمير المؤمنين عمر بن الخطاب، فأراد بذلك الاتصال بأهل بيت النبي ﷺ.' }
+    role: 'بنت علي وفاطمة، وحفيدة النبي ﷺ. تزوجها أمير المؤمنين عمر بن الخطاب، فأراد بذلك الاتصال بأهل بيت النبي ﷺ.' },
+
+  // ===== العبادلة — أبناء كبار الصحابة =====
+  abdullah_umar: { id: 'abdullah_umar', nameAr: 'عبد الله بن عمر', nameEn: 'Abdullah ibn Umar', type: 'sahabi', fatherId: 'umar',
+    role: 'من كبار علماء الصحابة وفقهائهم، وأكثرهم اتباعًا لسنة النبي ﷺ. أحد العبادلة الأربعة. أسلم مع أبيه وهاجر وعمره 10 سنين. شهد الخندق وما بعدها. توفي سنة 73هـ.' },
+  abdullah_abbas: { id: 'abdullah_abbas', nameAr: 'عبد الله بن عباس', nameEn: 'Abdullah ibn Abbas', type: 'sahabi', fatherId: 'al_abbas',
+    role: 'حبر الأمة وترجمان القرآن. ابن عم النبي ﷺ. دعا له النبي: "اللهم فقّهه في الدين وعلّمه التأويل". أحد العبادلة الأربعة. توفي بالطائف سنة 68هـ.' },
+  fadl_abbas: { id: 'fadl_abbas', nameAr: 'الفضل بن العباس', nameEn: 'Al-Fadl ibn al-Abbas', type: 'sahabi', fatherId: 'al_abbas',
+    role: 'أكبر أبناء العباس، وكنّي به (أبو الفضل). كان رديف النبي ﷺ يوم حجة الوداع. استُشهد في الشام في عهد أبي بكر سنة 13هـ.' },
+
+  // ===== نساء من بني هاشم =====
+  umm_hani: { id: 'umm_hani', nameAr: 'أم هانئ بنت أبي طالب', nameEn: 'Umm Hani bint Abi Talib', type: 'sahabi', gender: 'f', fatherId: 'abu_talib',
+    motherId: 'fatima_asad',
+    role: 'أخت علي وجعفر وعقيل. أجارت مشركًا يوم الفتح فأقرّ النبي ﷺ جوارها. في بيتها كان الإسراء والمعراج حيث بات النبي ﷺ تلك الليلة.' },
+
+  // ===== صحابة من بني عبد الدار (حملة لواء قريش) =====
+  musab: { id: 'musab', nameAr: 'مصعب بن عمير', nameEn: 'Mus\'ab ibn Umayr', type: 'sahabi', fatherId: 'umayr_musab',
+    role: 'سفير الإسلام الأول إلى المدينة قبل الهجرة. كان فتى قريش جمالاً ونعمة، فلما أسلم تركه أهله فعاش فقيرًا. حمل لواء المسلمين يوم أُحد واستُشهد. لم يجدوا ما يكفّن به سوى بردة يغطي بها رأسه فتنكشف قدماه.' },
+  uthman_talha_d: { id: 'uthman_talha_d', nameAr: 'عثمان بن طلحة', nameEn: 'Uthman ibn Talha', type: 'sahabi', fatherId: 'talha_abi_talha',
+    role: 'حامل مفتاح الكعبة. أسلم مع خالد بن الوليد وعمرو بن العاص قبل الفتح. يوم فتح مكة دفع له النبي ﷺ مفتاح الكعبة قائلاً: "خذوها يا بني طلحة خالدة تالدة، لا ينزعها منكم إلا ظالم".' },
+
+  // ===== صحابة من بني أمية =====
+  khalid_saeed: { id: 'khalid_saeed', nameAr: 'خالد بن سعيد بن العاص', nameEn: 'Khalid ibn Sa\'id ibn al-As', type: 'sahabi', fatherId: 'saeed_al_as',
+    role: 'من السابقين الأولين للإسلام، أسلم قبل عمر وأبي بكر. هاجر إلى الحبشة. أول من كتب "بسم الله الرحمن الرحيم" بأمر النبي ﷺ. استُشهد في معركة مرج الصُّفَّر بالشام.' },
+  abu_al_as_rabi: { id: 'abu_al_as_rabi', nameAr: 'أبو العاص بن الربيع', nameEn: "Abu al-'As ibn al-Rabi'", type: 'sahabi', fatherId: 'al_rabi_umawi',
+    wivesIds: ['zaynab_muhammad'],
+    role: 'زوج زينب بنت النبي ﷺ وابن خالتها (ابن هالة بنت خويلد). كان من أشراف قريش في المال والأمانة. أُسر يوم بدر ثم أطلقه النبي بعد فدية، ثم أسلم قبل فتح مكة، فرد النبي ﷺ زينب إليه بنكاح أول.' },
+
+  // ===== صحابة من بني مخزوم =====
+  ikrima: { id: 'ikrima', nameAr: 'عكرمة بن أبي جهل', nameEn: 'Ikrima ibn Abi Jahl', type: 'sahabi', fatherId: 'abu_jahl',
+    role: 'ابن أبي جهل فرعون هذه الأمة. حارب المسلمين حتى فتح مكة ففرّ، فلحقته زوجته أم حكيم بعد إسلامها فأسلم بين يدي النبي ﷺ. استُشهد يوم اليرموك سنة 15هـ وهو يردد: "بشّروا النبي ﷺ بفرح ابن عمه".' },
+
+  // ===== صحابة من بني عامر بن لؤي =====
+  suhayl_amr: { id: 'suhayl_amr', nameAr: 'سهيل بن عمرو', nameEn: 'Suhayl ibn Amr', type: 'sahabi', fatherId: 'amir_luayy',
+    role: 'من خطباء قريش وكبار رجالها. كان مشركًا وشارك ضد النبي ﷺ. مثّل قريشًا في صلح الحديبية. أسلم يوم الفتح وحسن إسلامه. ثبّت أهل مكة على الإسلام بخطبة مشهورة يوم وفاة النبي ﷺ. (مع تلخيص أجيال بين عامر وعمرو).' }
 };
 
 // ربط العلاقات العكسية (الزوجات والأبناء والأمهات)
@@ -1717,11 +2056,14 @@ let width = container.clientWidth;
 let height = container.clientHeight;
 
 const g = svg.append('g');
+// ترتيب الطبقات (من تحت لفوق):
+//   links  → nodes (كل العقد)  → marriage  → relation (أم)  → topNodes (نسخ للمحدد وأقاربه)
+// بحيث الخطوط تمر فوق العقد العادية، لكن المحدد وأقاربه يكونون فوق الخطوط.
 const linkGroup = g.append('g').attr('class', 'links');
-const relationGroup = g.append('g').attr('class', 'relations');
-// marriageGroup تحت nodeGroup ليظهر خلف المربعات
-const marriageGroup = g.append('g').attr('class', 'marriages');
 const nodeGroup = g.append('g').attr('class', 'nodes');
+const marriageGroup = g.append('g').attr('class', 'marriages');
+const relationGroup = g.append('g').attr('class', 'relations');
+const topGroup = g.append('g').attr('class', 'nodes-top');
 
 const zoom = d3.zoom()
   .scaleExtent([0.2, 3])
@@ -1783,8 +2125,8 @@ function collapseDeep(d, depth) {
 }
 
 let selectedId = null;
-let motherLineMode = false;
-let marriageMode = false;
+let motherLineMode = true;   // مفعّل افتراضيًا
+let marriageMode = true;     // مفعّل افتراضيًا
 
 function update() {
   // من أدب العرض: ترتيب الأبناء بحيث يكون الجد الذي على نسب النبي ﷺ في المنتصف
@@ -1891,7 +2233,8 @@ function update() {
   // Update existing
   const nodesMerged = nodeSel.merge(nodeEnter)
     .attr('transform', d => `translate(${d.xpos},${d.ypos})`)
-    .classed('selected', d => d.data.id === selectedId);
+    .classed('selected', d => d.data.id === selectedId)
+    .classed('subtree-root', d => d.data.id === subtreeFocusedId);
 
   // حساب حجم ديناميكي لكل عقدة حسب طول الاسم
   const AR_FONT = 28, EN_FONT = 20;
@@ -1963,6 +2306,49 @@ function update() {
 
   drawMarriageLines();
   drawMotherLine();
+  updateTopNodes();
+
+  // مزامنة تلقائية مع العرض الهرمي إن كان مفتوحًا
+  // أي تغيير في طي/توسيع الشجرة ينعكس فورًا على قائمة العرض الهرمي
+  if (document.body.classList.contains('outline-open') && typeof renderOutlineView === 'function') {
+    renderOutlineView();
+  }
+}
+
+/**
+ * ينسخ بطاقات الشخص المحدد وأقاربه (الأم/الزوجة) إلى topGroup
+ * فتظهر فوق خطوط العلاقات، بينما تبقى بقية العقد تحت الخطوط.
+ * النسخ غير تفاعلية (pointer-events: none) — الأصل في nodeGroup يبقى للنقر.
+ */
+function updateTopNodes() {
+  topGroup.selectAll('*').remove();
+  if (!selectedId) return;
+
+  const involvedIds = new Set([selectedId]);
+  const p = PEOPLE[selectedId];
+  if (p) {
+    if (motherLineMode) {
+      if (p.motherId && PEOPLE[p.motherId]) involvedIds.add(p.motherId);
+      Object.values(PEOPLE).forEach(other => {
+        if (other.motherId === selectedId) involvedIds.add(other.id);
+      });
+    }
+    if (marriageMode) {
+      (p.wivesIds || []).forEach(wid => { if (PEOPLE[wid]) involvedIds.add(wid); });
+      Object.values(PEOPLE).forEach(other => {
+        if (other.wivesIds && other.wivesIds.includes(selectedId)) involvedIds.add(other.id);
+      });
+    }
+  }
+
+  nodeGroup.selectAll('g.node').each(function() {
+    const d = d3.select(this).datum();
+    if (d && d.data && involvedIds.has(d.data.id)) {
+      const clone = this.cloneNode(true);
+      clone.setAttribute('pointer-events', 'none');
+      topGroup.node().appendChild(clone);
+    }
+  });
 }
 
 /* =========================================================
@@ -2031,22 +2417,40 @@ function drawMarriageLines() {
     const my = (y1 + y2) / 2;
     const offset = Math.min(80, Math.max(30, Math.abs(dx) * 0.25));
     const path = `M${x1},${y1} Q${mx + offset},${my - offset} ${x2},${y2}`;
+    // حاشية بيضاء أسفل الخط لإبرازه
+    marriageGroup.append('path')
+      .attr('d', path)
+      .attr('fill', 'none')
+      .attr('stroke', '#ffffff')
+      .attr('stroke-width', 12)
+      .attr('opacity', 0.9)
+      .attr('stroke-linecap', 'round');
+    // الخط الرئيسي — سميك بنفس سمك خط الأم
     marriageGroup.append('path')
       .attr('class', 'marriage-line')
       .attr('d', path)
       .attr('fill', 'none')
-      .attr('stroke', '#9333ea')
-      .attr('stroke-width', 4)
-      .attr('opacity', 0.85)
-      .attr('stroke-linecap', 'round');
+      .attr('stroke', '#7e22ce')
+      .attr('stroke-width', 8)
+      .attr('opacity', 1)
+      .attr('stroke-linecap', 'round')
+      .attr('filter', 'drop-shadow(0 2px 4px rgba(126,34,206,0.4))');
+    // دائرة خلفية لرمز الخاتم
+    const cx = mx + offset * 0.5;
+    const cy = my - offset * 0.5;
+    marriageGroup.append('circle')
+      .attr('cx', cx).attr('cy', cy).attr('r', 22)
+      .attr('fill', '#ffffff')
+      .attr('stroke', '#7e22ce')
+      .attr('stroke-width', 3)
+      .attr('filter', 'drop-shadow(0 1px 3px rgba(15,23,42,0.25))');
     marriageGroup.append('text')
-      .attr('class', 'marriage-heart')
-      .attr('x', mx + offset * 0.5)
-      .attr('y', my - offset * 0.5 + 6)
+      .attr('class', 'marriage-ring')
+      .attr('x', cx).attr('y', cy + 2)
       .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
       .attr('font-size', '24px')
-      .attr('fill', '#9333ea')
-      .text('♥');
+      .text('💍');
   });
 }
 
@@ -2092,23 +2496,40 @@ function drawMotherLine() {
     const offset = Math.min(80, Math.max(30, Math.abs(dx) * 0.25));
     // منحنى معاكس لاتجاه خط الزواج عشان ما يتداخلوش
     const path = `M${x1},${y1} Q${mx - offset},${my + offset} ${x2},${y2}`;
+    // حاشية بيضاء أسفل الخط لإبرازه
+    relationGroup.append('path')
+      .attr('d', path)
+      .attr('fill', 'none')
+      .attr('stroke', '#ffffff')
+      .attr('stroke-width', 12)
+      .attr('opacity', 0.9)
+      .attr('stroke-linecap', 'round');
+    // الخط الرئيسي — منقط
     relationGroup.append('path')
       .attr('class', 'mother-line')
       .attr('d', path)
       .attr('fill', 'none')
-      .attr('stroke', '#ea580c')
-      .attr('stroke-width', 3.5)
-      .attr('stroke-dasharray', '8 5')
-      .attr('opacity', 0.85)
-      .attr('stroke-linecap', 'round');
-    // رمز بيت (🏠) في المنتصف — يرمز للأم كمصدر البيت والسكن
+      .attr('stroke', '#c2410c')
+      .attr('stroke-width', 8)
+      .attr('stroke-dasharray', '14 6')
+      .attr('opacity', 1)
+      .attr('stroke-linecap', 'round')
+      .attr('filter', 'drop-shadow(0 2px 4px rgba(194,65,12,0.4))');
+    // دائرة خلفية لرمز البيت
+    const cx = mx - offset * 0.5;
+    const cy = my + offset * 0.5;
+    relationGroup.append('circle')
+      .attr('cx', cx).attr('cy', cy).attr('r', 22)
+      .attr('fill', '#ffffff')
+      .attr('stroke', '#c2410c')
+      .attr('stroke-width', 3)
+      .attr('filter', 'drop-shadow(0 1px 3px rgba(15,23,42,0.25))');
     relationGroup.append('text')
       .attr('class', 'mother-label')
-      .attr('x', mx - offset * 0.5)
-      .attr('y', my + offset * 0.5 + 6)
+      .attr('x', cx).attr('y', cy + 2)
       .attr('text-anchor', 'middle')
-      .attr('font-size', '20px')
-      .attr('fill', '#ea580c')
+      .attr('dominant-baseline', 'central')
+      .attr('font-size', '22px')
       .text('🏠');
   });
 }
@@ -2299,6 +2720,7 @@ function restorePanel() {
 // إلغاء تحديد الشخصية بالكامل
 function clearSelection() {
   selectedId = null;
+  subtreeFocusedId = null;
   document.getElementById('side-panel').classList.remove('open');
   document.body.classList.remove('panel-open', 'has-selection', 'peek-expanded');
   update();
@@ -2404,27 +2826,129 @@ document.getElementById('btn-marriage').addEventListener('click', (e) => {
   e.currentTarget.classList.toggle('active', marriageMode);
   drawMarriageLines();
 });
+/**
+ * بحث تفاعلي في القائمة الجانبية:
+ * - يُخفي الأسماء غير المطابقة فورًا أثناء الكتابة
+ * - يبحث في الاسم العربي والإنجليزي والدور والأصل
+ * - يُخفي العناوين الفرعية التي لا تحتوي أي مطابق
+ * - يُظهر عداد نتائج في كل تاب
+ * - يُبرز الجزء المطابق من الاسم
+ */
 document.getElementById('search').addEventListener('input', (e) => {
-  const q = e.target.value.trim();
-  if (!q) return;
-  const match = Object.values(PEOPLE).find(p =>
-    p.nameAr?.includes(q) || (p.nameEn || '').toLowerCase().includes(q.toLowerCase())
-  );
-  if (match) {
-    // Expand all ancestors of the match
-    let curId = match.fatherId;
-    while (curId) {
-      const node = findNodeById(curId);
-      if (node && node._children) {
-        node.children = node._children;
-        node._children = null;
-      }
-      curId = PEOPLE[curId]?.fatherId;
-    }
-    update();
-    selectPerson(match.id);
-  }
+  filterSidebarByQuery(e.target.value.trim());
 });
+
+function filterSidebarByQuery(q) {
+  const qlower = q.toLowerCase();
+  const hasQuery = q.length > 0;
+
+  // امسح تمييز سابق
+  document.querySelectorAll('.cat-item').forEach(item => {
+    const nameEl = item.querySelector('.cat-item-name');
+    if (nameEl && nameEl.dataset.original) {
+      nameEl.innerHTML = nameEl.dataset.original;
+    }
+  });
+
+  // عدّاد النتائج لكل تاب
+  const tabCounts = { sahabi: 0, sahabiya: 0, kafir: 0, other: 0 };
+
+  document.querySelectorAll('.cat-item').forEach(item => {
+    const id = item.dataset.id;
+    const p = PEOPLE[id];
+    if (!p) { item.style.display = 'none'; return; }
+
+    let matches = true;
+    if (hasQuery) {
+      const haystack = [
+        p.nameAr || '',
+        p.nameEn || '',
+        p.role || '',
+        p.origin || ''
+      ].join(' ').toLowerCase();
+      matches = haystack.includes(qlower);
+    }
+
+    item.style.display = matches ? '' : 'none';
+
+    // تمييز الجزء المطابق من الاسم العربي
+    if (matches && hasQuery) {
+      const nameEl = item.querySelector('.cat-item-name');
+      if (nameEl) {
+        const orig = nameEl.dataset.original || nameEl.innerHTML;
+        nameEl.dataset.original = orig;
+        const arName = p.nameAr || '';
+        // ابحث عن موضع المطابقة في الاسم الأصلي (حساسية بحروف العربية أقل)
+        const idx = arName.toLowerCase().indexOf(qlower);
+        if (idx >= 0) {
+          const before = arName.substring(0, idx);
+          const match = arName.substring(idx, idx + q.length);
+          const after = arName.substring(idx + q.length);
+          nameEl.innerHTML =
+            escapeHtmlLocal(before) +
+            '<mark class="search-hl">' + escapeHtmlLocal(match) + '</mark>' +
+            escapeHtmlLocal(after);
+        }
+      }
+    }
+
+    // احسب التاب التابع لها
+    if (matches) {
+      const panel = item.closest('.tab-panel');
+      if (panel) {
+        const tabName = panel.id.replace('panel-', '');
+        if (tabCounts[tabName] !== undefined) tabCounts[tabName]++;
+      }
+    }
+  });
+
+  // أخفِ العناوين الفرعية التي لا تحتوي على أي بند مرئي بعدها
+  document.querySelectorAll('.cat-subheader, .cat-sub-subheader').forEach(header => {
+    let hasVisible = false;
+    let next = header.nextElementSibling;
+    while (next && !next.classList.contains('cat-subheader') && !next.classList.contains('cat-sub-subheader')) {
+      if (next.classList.contains('cat-item') && next.style.display !== 'none') {
+        hasVisible = true; break;
+      }
+      next = next.nextElementSibling;
+    }
+    header.style.display = hasVisible ? '' : 'none';
+  });
+
+  // حدّث عدادات التابات (مع تمييز عند وجود نتائج)
+  Object.keys(tabCounts).forEach(tabName => {
+    const badge = document.getElementById('count-' + tabName);
+    if (!badge) return;
+    if (hasQuery) {
+      const total = parseInt(badge.dataset.original || badge.textContent, 10);
+      if (!badge.dataset.original) badge.dataset.original = total;
+      badge.textContent = tabCounts[tabName] + '/' + (badge.dataset.original);
+      const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (tab) tab.classList.toggle('has-results', tabCounts[tabName] > 0);
+    } else {
+      if (badge.dataset.original) {
+        badge.textContent = badge.dataset.original;
+      }
+      const tab = document.querySelector(`.tab[data-tab="${tabName}"]`);
+      if (tab) tab.classList.remove('has-results');
+    }
+  });
+
+  // لو البحث أعطى نتيجة في تاب واحد فقط، انتقل إليه تلقائياً
+  if (hasQuery) {
+    const activeTabs = Object.keys(tabCounts).filter(t => tabCounts[t] > 0);
+    if (activeTabs.length === 1) {
+      switchTab(activeTabs[0]);
+    }
+  }
+}
+
+// مساعد بسيط لتجنب HTML injection
+function escapeHtmlLocal(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
 
 function centerTree() {
   width = container.clientWidth;
@@ -2544,8 +3068,37 @@ function buildLeftSidebar() {
   const kuffarSorted   = { ranked: [], rest: kuffar.slice().sort((a,b) => a.nameAr.localeCompare(b.nameAr, 'ar')) };
   const othersSorted   = { ranked: [], rest: others.slice().sort((a,b) => a.nameAr.localeCompare(b.nameAr, 'ar')) };
 
-  // مفاتيح المجموعات (ten / mothers / kuffar) للتركيز الجماعي
-  document.getElementById('panel-sahabi').innerHTML   = renderPanel(sahabiSorted, 'العشرة المبشرون بالجنة', 'باقي الصحابة', 'ten', null);
+  // مفاتيح المجموعات (ten / caliphs / mothers / kuffar) للتركيز الجماعي
+  // تاب الصحابة: تقسيم "العشرة المبشرون" إلى فرعيين — الخلفاء الراشدون (1-4) + باقي المبشرين (5-10)
+  function renderSahabiPanel(sorted) {
+    let body = '';
+    if (sorted.ranked.length) {
+      // العنوان الرئيسي: العشرة المبشرون
+      body += `<div class="cat-subheader"><span>العشرة المبشرون بالجنة</span>` +
+              `<button class="group-focus-btn" onclick="focusGroup('ten')" title="تركيز على نسب العشرة المبشرين">🎯 تركيز المجموعة</button>` +
+              `</div>`;
+      // فرعي 1: الخلفاء الراشدون (rank 1..4)
+      const caliphs = sorted.ranked.filter(p => p.rank >= 1 && p.rank <= 4);
+      const restTen = sorted.ranked.filter(p => p.rank >= 5 && p.rank <= 10);
+      if (caliphs.length) {
+        body += `<div class="cat-sub-subheader"><span>الخلفاء الراشدون</span>` +
+                `<button class="group-focus-btn" onclick="focusGroup('caliphs')" title="تركيز على نسب الخلفاء الراشدين">🎯 تركيز المجموعة</button>` +
+                `</div>`;
+        body += caliphs.map(renderItem).join('');
+      }
+      // فرعي 2: باقي المبشرين (5..10)
+      if (restTen.length) {
+        body += `<div class="cat-sub-subheader"><span>باقي العشرة المبشرين</span></div>`;
+        body += restTen.map(renderItem).join('');
+      }
+    }
+    if (sorted.rest.length) {
+      body += `<div class="cat-subheader"><span>باقي الصحابة</span></div>`;
+      body += sorted.rest.map(renderItem).join('');
+    }
+    return body;
+  }
+  document.getElementById('panel-sahabi').innerHTML   = renderSahabiPanel(sahabiSorted);
   document.getElementById('panel-sahabiya').innerHTML = renderPanel(sahabiyaSorted, 'أمهات المؤمنين', 'باقي الصحابيات', 'mothers', null);
   // للكفار: ضع زر مجموعة أعلى القائمة (نعطيه عنوانًا فرعيًا واحدًا)
   const kuffarBody = renderPanel({ ranked: kuffarSorted.rest, rest: [] }, 'زعماء كفار قريش', '', 'kuffar', null);
@@ -3053,6 +3606,10 @@ function collapseAllKeepPathTo(targetId) {
 }
 
 // ⬇️ أبناء المحدد — يُظهر كل أبناء وأحفاد المحدد حتى نهاية سلسلته، دون طي أي شيء ظاهر
+// متغير يحفظ id الشخص المحدد كـ "أصل بني" عند الضغط على زر أبناء المحدد
+// يُستخدم لتمييز بطاقته في الشجرة ولملء عنوان الطباعة الافتراضي "نسب بني فلان"
+let subtreeFocusedId = null;
+
 document.getElementById('btn-show-children').addEventListener('click', () => {
   if (!selectedId) {
     alert('اختر شخصاً أولاً من القائمة أو من الشجرة');
@@ -3064,12 +3621,16 @@ document.getElementById('btn-show-children').addEventListener('click', () => {
   ensurePathVisible(selNode);
   // افتح كل الشجرة الفرعية تحت المحدد (أبناء + أحفاد حتى النهاية)
   expandSubtree(selNode);
+  // مَيِّز الشخص كأصل ذرية (بني فلان) لأغراض الشجرة والطباعة
+  subtreeFocusedId = selectedId;
   update();
 });
+window.subtreeFocusedId = subtreeFocusedId;
 
 // ⇲ عرض الكل — يلغي التركيز، يوسّع كل شيء، ويركّز الشجرة
 document.getElementById('btn-expand').addEventListener('click', () => {
   focusMode = false; focusedId = null;
+  subtreeFocusedId = null;
   document.getElementById('btn-focus').classList.remove('active');
   // استعادة أي حالة محفوظة بالتركيز (deep)
   eachDeep(root, d => {
@@ -3087,6 +3648,7 @@ document.getElementById('btn-expand').addEventListener('click', () => {
 // ⇱ طي الكل — يُبقي فقط سلسلة نسب النبي ﷺ المباشرة (الجذر → النبي)
 document.getElementById('btn-collapse').addEventListener('click', () => {
   focusMode = false; focusedId = null;
+  subtreeFocusedId = null;
   document.getElementById('btn-focus').classList.remove('active');
   // نظف أي حفظ سابق (deep)
   eachDeep(root, d => { delete d._focusBackup; });
@@ -3099,7 +3661,8 @@ document.getElementById('btn-collapse').addEventListener('click', () => {
 let focusMode = false;
 let focusedId = null;          // متوافقية — واحد من العناصر في focusedIds
 let focusedIds = new Set();    // مجموعة المُركَّز عليهم (يدعم التركيز المتعدد)
-let focusTitle = null;         // عنوان افتراضي للطباعة
+let focusTitle = null;         // عنوان افتراضي للطباعة (لمجموعة جاهزة)
+let primaryFocusedId = null;   // آخر شخص ضُغط عليه زر 🎯 (للعنوان الافتراضي في الطباعة)
 
 document.getElementById('btn-focus').addEventListener('click', () => {
   if (!selectedId && !focusMode) {
@@ -3121,11 +3684,14 @@ document.getElementById('btn-focus').addEventListener('click', () => {
  * @param {string|null} title — عنوان افتراضي للطباعة (يُستخدم مع مجموعة أو اسم واحد)
  */
 function setFocus(ids, title) {
+  // عند بدء/إلغاء التركيز نُلغي وضع "أبناء المحدد" لأن الأولوية الآن للتركيز
+  subtreeFocusedId = null;
   if (!ids || !ids.length) {
     focusMode = false;
     focusedId = null;
     focusedIds = new Set();
     focusTitle = null;
+    primaryFocusedId = null;
   } else {
     focusMode = true;
     focusedIds = new Set(ids);
@@ -3283,36 +3849,86 @@ function applyFocus() {
  * يضبط التركيز على مجموعة معروفة (العشرة المبشرين / أمهات المؤمنين / كفار قريش).
  */
 /**
- * تركيز على شخص:
- * - إذا كان التركيز مفعّل بالفعل، يُبدّل (toggle) هذا الشخص داخل مجموعة التركيز (إضافة/إزالة).
- * - إذا لم يكن في تركيز، يبدأ تركيز جديد بهذا الشخص فقط.
- * - الضغط مع Ctrl/Cmd/Shift يُجبر دخول وضع الإضافة حتى لو لم يكن في تركيز.
+ * يُضيف الأشخاص المرتبطين (أم/زوجة/زوج) للمجموعة حسب الخطوط المفعّلة حاليًا:
+ *   - لو خط الأم (motherLineMode) مفعّل: يُضاف والدة الشخص وأبناؤه (لو كان الشخص أمًا).
+ *   - لو خط الزواج (marriageMode) مفعّل: تُضاف زوجاته وأزواجه.
+ */
+function addRelatedForActiveLines(id, set) {
+  const p = PEOPLE[id];
+  if (!p) return;
+  if (typeof motherLineMode !== 'undefined' && motherLineMode) {
+    if (p.motherId && PEOPLE[p.motherId]) set.add(p.motherId);
+    // لو الشخص نفسه "أم" لأحد آخر → أضف الأبناء
+    Object.values(PEOPLE).forEach(other => {
+      if (other.motherId === id) set.add(other.id);
+    });
+  }
+  if (typeof marriageMode !== 'undefined' && marriageMode) {
+    (p.wivesIds || []).forEach(wid => {
+      if (PEOPLE[wid]) set.add(wid);
+    });
+    // لو هذا الشخص زوجة/ابنة ذُكرت في wivesIds لشخص آخر
+    Object.values(PEOPLE).forEach(other => {
+      if (other.wivesIds && other.wivesIds.includes(id)) set.add(other.id);
+    });
+  }
+}
+
+/**
+ * تركيز على شخص (من زر 🎯 بجوار الاسم):
+ * - لو التركيز مفعّل بالفعل: يُبدّل (toggle) الشخص (إضافة/إزالة).
+ * - لو مفيش تركيز: يبدأ تركيزًا جديدًا.
+ * - لو خط الأم/الزوجة مفعّل وقت الإضافة: يُضاف تلقائيًا والدته/زوجاته للمجموعة،
+ *   لكن العنوان الافتراضي للطباعة يظل اسم الشخص المضغوط عليه فقط.
  */
 function focusOnePerson(id, event) {
   const p = PEOPLE[id];
   if (!p) return;
 
-  // سلوك افتراضي: لو فيه تركيز حالي، أي ضغطة تبدّل الشخص (إضافة/إزالة).
-  // لو مفيش تركيز، الضغطة تبدأ تركيزًا جديدًا بالشخص.
   const inFocus = focusMode && focusedIds.size > 0;
 
   let newSet;
+  let removing = false;
   if (inFocus) {
     newSet = new Set(focusedIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+      removing = true;
+    } else {
+      newSet.add(id);
+      addRelatedForActiveLines(id, newSet);
+    }
   } else {
     newSet = new Set([id]);
+    addRelatedForActiveLines(id, newSet);
   }
 
-  // احسب العنوان الافتراضي
-  let title = null;
-  if (newSet.size === 1) {
-    title = `إلتقاء نسب ${PEOPLE[[...newSet][0]].nameAr} مع نسب النبي ﷺ`;
-  } else if (newSet.size > 1) {
-    title = `إلتقاء نسب مجموعة من ${newSet.size} أشخاص مع نسب النبي ﷺ`;
+  // primaryFocusedId = الشخص الرئيسي (المضغوط عليه) — يُستخدم كعنوان افتراضي للطباعة
+  if (removing) {
+    // لو حُذف الرئيسي، اختر واحدًا جديدًا من المتبقين (أو اتركه فارغًا)
+    if (primaryFocusedId === id) {
+      primaryFocusedId = newSet.size > 0 ? [...newSet][0] : null;
+    }
+  } else {
+    primaryFocusedId = id;
   }
+
+  // العنوان الافتراضي للطباعة: اسم الشخص الرئيسي فقط (مش المجموعة)
+  let title = null;
+  if (primaryFocusedId && PEOPLE[primaryFocusedId]) {
+    title = `إلتقاء نسب ${PEOPLE[primaryFocusedId].nameAr} مع نسب النبي ﷺ`;
+  } else if (newSet.size === 1) {
+    title = `إلتقاء نسب ${PEOPLE[[...newSet][0]].nameAr} مع نسب النبي ﷺ`;
+  }
+  // تعيين primaryFocusedId قبل setFocus عشان ما يتصفرش
+  const savedPrimary = primaryFocusedId;
   setFocus([...newSet], title);
+  // setFocus قد يُصفّر primaryFocusedId لو كانت المجموعة فارغة — نعيد التعيين لغير ذلك
+  if (newSet.size > 0) primaryFocusedId = savedPrimary;
+  // تحول تلقائي لعرض الشجرة عند التركيز
+  if (newSet.size > 0 && typeof switchView === 'function') {
+    if (document.body.classList.contains('view-outline')) switchView('tree');
+  }
 }
 window.focusOnePerson = focusOnePerson;
 
@@ -3332,6 +3948,10 @@ function focusGroup(groupKey) {
   if (groupKey === 'ten') {
     ids = all.filter(p => p.type === 'sahabi' && p.gender !== 'f' && p.rank).sort((a,b)=>a.rank-b.rank).map(p => p.id);
     title = 'إلتقاء نسب العشرة المبشرين بالجنة مع نسب النبي ﷺ';
+  } else if (groupKey === 'caliphs') {
+    ids = all.filter(p => p.type === 'sahabi' && p.gender !== 'f' && p.rank >= 1 && p.rank <= 4)
+             .sort((a,b)=>a.rank-b.rank).map(p => p.id);
+    title = 'إلتقاء نسب الخلفاء الراشدين مع نسب النبي ﷺ';
   } else if (groupKey === 'mothers') {
     ids = all.filter(p => p.type === 'mother').sort((a,b)=>(a.rank||99)-(b.rank||99)).map(p => p.id);
     title = 'إلتقاء نسب أمهات المؤمنين مع نسب النبي ﷺ';
@@ -3339,10 +3959,421 @@ function focusGroup(groupKey) {
     ids = all.filter(p => p.type === 'kafir').map(p => p.id);
     title = 'إلتقاء نسب زعماء كفار قريش مع نسب النبي ﷺ';
   }
+  // للمجموعات: لا يوجد شخص "رئيسي" — العنوان الافتراضي = اسم المجموعة
+  primaryFocusedId = null;
   setFocus(ids, title);
+  // تحول تلقائي لعرض الشجرة عند تركيز المجموعة
+  if (ids.length > 0 && typeof switchView === 'function') {
+    if (document.body.classList.contains('view-outline')) switchView('tree');
+  }
 }
 window.focusGroup = focusGroup;
 window.setFocus = setFocus;
+
+/* =========================================================
+   العرض المبسط (Outline View)
+   ========================================================= */
+
+// حالة الـ outline: مجموعة ids المطوية
+const outlineCollapsed = new Set();
+let currentOutlineFilter = 'all';
+
+/** يبني شجرة DOM للعرض المبسط recursive */
+function renderOutlineView() {
+  const container = document.getElementById('outline-tree');
+  const extList = document.getElementById('outline-external-list');
+  if (!container || !extList) return;
+
+  container.innerHTML = '';
+  extList.innerHTML = '';
+
+  // ابدأ من فهر
+  const fihr = PEOPLE['fihr'];
+  if (!fihr) return;
+
+  // طيّ افتراضي للأفرع غير نسب النبي (لتقليل الازدحام الأولي)
+  if (!outlineCollapsed._initialized) {
+    initDefaultCollapse();
+    outlineCollapsed._initialized = true;
+  }
+
+  renderOutlineNode(fihr.id, 0, container);
+
+  // أقسام الأشخاص الخارجيين (بني هلال، بني إسرائيل...)
+  renderExternalSection(extList);
+}
+
+/** طيّ افتراضي: يُبقي السلسلة المباشرة للنبي مفتوحة، وبقية الفروع مطوية */
+function initDefaultCollapse() {
+  // اجمع كل الأجداد المباشرين للنبي (من محمد إلى فهر)
+  const directChain = new Set();
+  let cur = PEOPLE['muhammad'];
+  while (cur) {
+    directChain.add(cur.id);
+    cur = cur.fatherId ? PEOPLE[cur.fatherId] : null;
+  }
+  // اطوِ كل شخص ليس على سلسلة النبي المباشرة (ما عدا فهر والأعلى)
+  Object.values(PEOPLE).forEach(p => {
+    if (!directChain.has(p.id) && p.id !== 'fihr') {
+      outlineCollapsed.add(p.id);
+    }
+  });
+}
+
+/** يرسم عقدة واحدة في الـ outline ويكرر لأبنائها */
+function renderOutlineNode(id, depth, container) {
+  const p = PEOPLE[id];
+  if (!p) return;
+
+  const children = (p.childrenIds || []).filter(cid => PEOPLE[cid]);
+  const hasChildren = children.length > 0;
+  // حالة الطي تُقرأ من الشجرة (د3) للمزامنة الكاملة
+  const treeNode = (typeof findNodeAnywhere === 'function') ? findNodeAnywhere(id) : null;
+  const isCollapsedInTree = treeNode && !treeNode.children && treeNode._children && treeNode._children.length;
+  const isCollapsed = !!isCollapsedInTree || outlineCollapsed.has(id);
+
+  const row = document.createElement('div');
+  row.className = 'outline-item';
+  row.dataset.id = id;
+  row.dataset.type = p.type || 'neutral';
+  row.dataset.depth = depth;
+  if (id === selectedId) row.classList.add('selected');
+  if (focusedIds && focusedIds.has(id)) row.classList.add('focused-active');
+
+  // المسافة البادئة (تصميم كلاسيكي — مسافة 14px لكل مستوى)
+  const indent = document.createElement('span');
+  indent.className = 'outline-indent';
+  indent.style.width = (depth * 14) + 'px';
+  indent.style.flexShrink = '0';
+  row.appendChild(indent);
+
+  // زر +/- بنمط classic Windows tree view
+  const chev = document.createElement('span');
+  chev.className = 'outline-chev' + (hasChildren ? '' : ' leaf');
+  chev.textContent = hasChildren ? (isCollapsed ? '+' : '−') : '';
+  if (hasChildren) {
+    chev.title = isCollapsed ? 'توسيع' : 'طي';
+    chev.onclick = (e) => { e.stopPropagation(); toggleOutlineItem(id); };
+  }
+  row.appendChild(chev);
+
+  // النقطة الملونة
+  const dot = document.createElement('span');
+  dot.className = 'outline-type-dot';
+  dot.style.background = typeColor(p.type);
+  row.appendChild(dot);
+
+  // الرتبة (للعشرة المبشرين / أمهات المؤمنين)
+  if (p.rank) {
+    const rank = document.createElement('span');
+    rank.className = 'outline-rank';
+    rank.textContent = p.rank;
+    row.appendChild(rank);
+  }
+
+  // علامة التصنيف
+  const cat = personCategory(id);
+  if (cat === 'external') {
+    const m = document.createElement('span');
+    m.className = 'outline-marker external';
+    m.textContent = '⚑';
+    m.title = 'من خارج قريش';
+    row.appendChild(m);
+  } else if (cat === 'quraish-not-in-tree') {
+    const m = document.createElement('span');
+    m.className = 'outline-marker notintree';
+    m.textContent = '◇';
+    m.title = 'من قريش — غير موجود في الشجرة';
+    row.appendChild(m);
+  }
+
+  // الاسم (الضغط عليه يختار الشخص)
+  const name = document.createElement('span');
+  name.className = 'outline-name';
+  name.textContent = shortName(p.nameAr);
+  if (p.role) name.title = p.role;
+  name.onclick = () => selectPerson(id);
+  row.appendChild(name);
+
+  // زر 🎯 التركيز
+  const focusBtn = document.createElement('button');
+  focusBtn.className = 'outline-focus-btn' + (focusedIds && focusedIds.has(id) ? ' active' : '');
+  focusBtn.textContent = '🎯';
+  focusBtn.title = 'تركيز نسبه مع النبي ﷺ';
+  focusBtn.onclick = (e) => {
+    e.stopPropagation();
+    focusOnePerson(id, e);
+  };
+  row.appendChild(focusBtn);
+
+  container.appendChild(row);
+
+  // تكرار للأبناء (إلا إذا مطوي)
+  if (hasChildren && !isCollapsed) {
+    children.forEach(cid => renderOutlineNode(cid, depth + 1, container));
+  }
+}
+
+/** قسم الأشخاص الخارجيين (غير متصلين بفهر) */
+function renderExternalSection(container) {
+  const externals = [];
+  Object.values(PEOPLE).forEach(p => {
+    const cat = personCategory(p.id);
+    if (cat === 'external') externals.push(p);
+  });
+  if (!externals.length) {
+    document.getElementById('outline-external').style.display = 'none';
+    return;
+  }
+  document.getElementById('outline-external').style.display = '';
+
+  // رتب حسب النوع ثم الاسم
+  externals.sort((a, b) => {
+    if (a.type !== b.type) return (a.type || '').localeCompare(b.type || '');
+    return a.nameAr.localeCompare(b.nameAr, 'ar');
+  });
+
+  externals.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'outline-item';
+    row.dataset.id = p.id;
+    row.dataset.type = p.type || 'neutral';
+    if (p.id === selectedId) row.classList.add('selected');
+
+    const dot = document.createElement('span');
+    dot.className = 'outline-type-dot';
+    dot.style.background = typeColor(p.type);
+    dot.style.marginRight = '4px';
+    row.appendChild(dot);
+
+    if (p.rank) {
+      const rank = document.createElement('span');
+      rank.className = 'outline-rank';
+      rank.textContent = p.rank;
+      row.appendChild(rank);
+    }
+
+    const name = document.createElement('span');
+    name.className = 'outline-name';
+    name.textContent = p.nameAr;
+    row.appendChild(name);
+
+    const m = document.createElement('span');
+    m.className = 'outline-marker external';
+    m.textContent = '⚑';
+    row.appendChild(m);
+
+    if (p.origin) {
+      const role = document.createElement('span');
+      role.className = 'outline-role';
+      role.textContent = '— ' + p.origin;
+      row.appendChild(role);
+    }
+
+    const focusBtn = document.createElement('button');
+    focusBtn.className = 'outline-focus-btn' + (focusedIds && focusedIds.has(p.id) ? ' active' : '');
+    focusBtn.textContent = '🎯';
+    focusBtn.onclick = (e) => {
+      e.stopPropagation();
+      switchView('tree');
+      focusOnePerson(p.id, e);
+    };
+    row.appendChild(focusBtn);
+
+    row.onclick = () => selectPerson(p.id);
+    container.appendChild(row);
+  });
+}
+
+/** يبدل حالة طي/فتح عقدة — يعمل على شجرة د3 وينعكس تلقائيًا على outline */
+function toggleOutlineItem(id) {
+  const node = (typeof findNodeAnywhere === 'function') ? findNodeAnywhere(id) : null;
+  if (node) {
+    // بدّل حالة الشجرة (نفس سلوك زر +/− في الشجرة)
+    if (node.children && node.children.length) {
+      // طي عميق مثل زر الطي في الشجرة
+      if (typeof collapseRec === 'function') collapseRec(node);
+      else { node._children = node.children; node.children = null; }
+      outlineCollapsed.add(id);
+    } else if (node._children && node._children.length) {
+      // توسيع الأبناء المباشرين فقط
+      if (typeof expandDirectChildren === 'function') expandDirectChildren(node);
+      else { node.children = node._children; node._children = null; }
+      outlineCollapsed.delete(id);
+    }
+    // حدّث عرض الشجرة فورًا ليظهر التغيير فيها
+    if (typeof update === 'function') update();
+  } else {
+    // بدون شجرة: استخدم الحالة المحلية فقط
+    if (outlineCollapsed.has(id)) outlineCollapsed.delete(id);
+    else outlineCollapsed.add(id);
+  }
+  renderOutlineView();
+}
+
+/** فتح كل العقد في الـ outline والشجرة معًا */
+function outlineExpandAll() {
+  outlineCollapsed.clear();
+  if (typeof expandAll === 'function') {
+    expandAll();
+    if (typeof update === 'function') update();
+  }
+  renderOutlineView();
+}
+
+/** طي كل العقد ماعدا فهر — في الـ outline والشجرة معًا */
+function outlineCollapseAll() {
+  Object.values(PEOPLE).forEach(p => {
+    if (p.id !== 'fihr') outlineCollapsed.add(p.id);
+  });
+  if (typeof collapseAllKeepPathTo === 'function') {
+    // طي الكل مع إبقاء مسار النبي
+    collapseAllKeepPathTo('muhammad');
+    if (typeof update === 'function') update();
+  }
+  renderOutlineView();
+}
+
+/** بحث/تصفية */
+function filterOutline() {
+  const q = document.getElementById('outline-search').value.trim().toLowerCase();
+  const filter = currentOutlineFilter;
+
+  // إن كان هناك بحث نشط، افتح كل الأجداد للمطابقين
+  if (q) {
+    // لكل شخص يطابق البحث، افتح أجداده
+    Object.values(PEOPLE).forEach(p => {
+      if (matchesOutlineQuery(p, q, filter)) {
+        let cur = p.fatherId ? PEOPLE[p.fatherId] : null;
+        while (cur) {
+          outlineCollapsed.delete(cur.id);
+          cur = cur.fatherId ? PEOPLE[cur.fatherId] : null;
+        }
+      }
+    });
+  }
+
+  renderOutlineView();
+
+  // طبّق hidden على السطور غير المطابقة
+  document.querySelectorAll('.outline-item').forEach(row => {
+    const id = row.dataset.id;
+    const p = PEOPLE[id];
+    if (!p) return;
+    const matches = matchesOutlineQuery(p, q, filter);
+    // إن لم يطابق، لكن كان جدًا لمطابق، أبقه
+    const hasMatchingDescendant = !q && filter === 'all' ? false : hasMatchingDescendantRec(id, q, filter);
+    if (!matches && !hasMatchingDescendant) {
+      row.classList.add('hidden');
+    }
+  });
+}
+
+function matchesOutlineQuery(p, q, filter) {
+  if (filter !== 'all' && p.type !== filter) return false;
+  if (!q) return true;
+  const haystack = [p.nameAr, p.nameEn || '', p.role || '', p.origin || ''].join(' ').toLowerCase();
+  return haystack.includes(q);
+}
+
+function hasMatchingDescendantRec(id, q, filter) {
+  const p = PEOPLE[id];
+  if (!p) return false;
+  if (!p.childrenIds || !p.childrenIds.length) return false;
+  for (const cid of p.childrenIds) {
+    const c = PEOPLE[cid];
+    if (!c) continue;
+    if (matchesOutlineQuery(c, q, filter)) return true;
+    if (hasMatchingDescendantRec(cid, q, filter)) return true;
+  }
+  return false;
+}
+
+/**
+ * بدل switchView (القديم) — الآن الـ outline بانل على اليمين يُفتح/يُغلق.
+ * الشجرة دائمًا مرئية في الخلفية. السايدبار والـ outline متبادلان (mutual exclusion).
+ */
+function toggleOutlinePanel(forceOpen) {
+  const body = document.body;
+  const isOpen = body.classList.contains('outline-open');
+  const shouldOpen = (forceOpen === true) || (forceOpen === false ? false : !isOpen);
+  body.classList.toggle('outline-open', shouldOpen);
+  if (shouldOpen) {
+    // إخفاء السايدبار عند فتح outline (mutual exclusion)
+    body.classList.add('sidebar-hidden');
+    renderOutlineView();
+  }
+  const btn = document.getElementById('btn-view-outline');
+  if (btn) btn.classList.toggle('active', shouldOpen);
+  // أعد توسيط الشجرة بعد انتهاء حركة الفتح/الإغلاق
+  setTimeout(() => { if (typeof centerTree === 'function') centerTree(); }, 270);
+}
+
+// للتوافق مع الكود القديم الذي يستدعي switchView
+function switchView(mode) {
+  if (mode === 'outline') toggleOutlinePanel(true);
+  else toggleOutlinePanel(false);
+}
+window.switchView = switchView;
+window.toggleOutlinePanel = toggleOutlinePanel;
+window.toggleOutlineItem = toggleOutlineItem;
+
+/* ربط أزرار وأحداث الـ outline */
+document.getElementById('btn-view-outline').addEventListener('click', () => toggleOutlinePanel());
+// زر view-tree الآن يغلق outline فقط (يعود لعرض الشجرة وحده)
+const btnViewTreeEl = document.getElementById('btn-view-tree');
+if (btnViewTreeEl) {
+  btnViewTreeEl.addEventListener('click', () => toggleOutlinePanel(false));
+}
+document.getElementById('outline-search').addEventListener('input', () => filterOutline());
+document.getElementById('outline-expand-all').addEventListener('click', outlineExpandAll);
+document.getElementById('outline-collapse-all').addEventListener('click', outlineCollapseAll);
+document.querySelectorAll('.outline-filters button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.outline-filters button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentOutlineFilter = btn.dataset.filter;
+    filterOutline();
+  });
+});
+
+/* ===== مقبض تغيير حجم الـ outline panel ===== */
+(function setupOutlineResize(){
+  const handle = document.getElementById('outline-resize');
+  if (!handle) return;
+  let dragging = false, startX = 0, startW = 0;
+  const onStart = (clientX) => {
+    dragging = true;
+    startX = clientX;
+    const cssVal = getComputedStyle(document.documentElement).getPropertyValue('--outline-w').trim();
+    startW = parseInt(cssVal || '360', 10) || 360;
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'ew-resize';
+  };
+  const onMove = (clientX) => {
+    if (!dragging) return;
+    // على اليمين: السحب لليسار (clientX أقل) → عرض أكبر
+    const delta = startX - clientX;
+    const newW = Math.max(260, Math.min(window.innerWidth * 0.9, startW + delta));
+    document.documentElement.style.setProperty('--outline-w', newW + 'px');
+  };
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.userSelect = '';
+    document.body.style.cursor = '';
+    if (typeof centerTree === 'function') setTimeout(centerTree, 50);
+  };
+  handle.addEventListener('mousedown', (e) => { e.preventDefault(); onStart(e.clientX); });
+  document.addEventListener('mousemove', (e) => onMove(e.clientX));
+  document.addEventListener('mouseup', onEnd);
+  // دعم اللمس
+  handle.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), {passive: true});
+  document.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX), {passive: true});
+  document.addEventListener('touchend', onEnd);
+})();
 
 /* =========================================================
    الطباعة — عبر iframe مستقل (طريقة موثوقة جدًا)
@@ -3630,6 +4661,13 @@ function escapeHtml(s) {
 }
 
 document.getElementById('btn-print').addEventListener('click', () => {
+  // الطباعة تعمل على شجرة النسب فقط — ننتقل للعرض الشجري أولاً
+  if (document.body.classList.contains('view-outline')) {
+    switchView('tree');
+    // انتظر قليلاً حتى تُرسم الشجرة ثم افتح الحوار
+    setTimeout(openPrintDialog, 200);
+    return;
+  }
   openPrintDialog();
 });
 
@@ -3643,9 +4681,17 @@ function openPrintDialog() {
   const dialog = document.getElementById('print-dialog');
   const input = document.getElementById('print-subtitle');
   let defaultTitle = '';
-  if (focusMode) {
-    // استخدم العنوان المحفوظ من setFocus (مجموعة أو شخص)
-    if (focusTitle) {
+
+  // أولوية 1: "أبناء المحدد" — العنوان الافتراضي "نسب بني فلان"
+  if (subtreeFocusedId && PEOPLE[subtreeFocusedId]) {
+    const p = PEOPLE[subtreeFocusedId];
+    const nm = typeof shortName === 'function' ? shortName(p.nameAr) : p.nameAr;
+    defaultTitle = `نسب بني ${nm}`;
+  } else if (focusMode) {
+    // أولوية 2: وضع التركيز (شخص أو مجموعة)
+    if (primaryFocusedId && PEOPLE[primaryFocusedId]) {
+      defaultTitle = `إلتقاء نسب ${PEOPLE[primaryFocusedId].nameAr} مع نسب النبي ﷺ`;
+    } else if (focusTitle) {
       defaultTitle = focusTitle;
     } else if (focusedIds.size === 1) {
       const p = PEOPLE[[...focusedIds][0]];
@@ -3665,10 +4711,20 @@ document.getElementById('btn-do-print').addEventListener('click', () => {
   setTimeout(() => doPrint(sub), 100);
 });
 
-// ☰ إظهار/إخفاء قائمة الأسماء الجانبية
+// ☰ إظهار/إخفاء قائمة الأسماء الجانبية (مع إغلاق outline إذا كان مفتوحًا — mutual exclusion)
 document.getElementById('btn-toggle-sidebar').addEventListener('click', (e) => {
-  document.body.classList.toggle('sidebar-hidden');
-  const isShown = !document.body.classList.contains('sidebar-hidden');
+  const body = document.body;
+  const sidebarCurrentlyHidden = body.classList.contains('sidebar-hidden');
+  const outlineOpen = body.classList.contains('outline-open');
+  if (outlineOpen) {
+    // أغلق outline وأظهر السايدبار
+    body.classList.remove('outline-open');
+    body.classList.remove('sidebar-hidden');
+    document.getElementById('btn-view-outline').classList.remove('active');
+  } else {
+    body.classList.toggle('sidebar-hidden');
+  }
+  const isShown = !body.classList.contains('sidebar-hidden');
   e.currentTarget.classList.toggle('active', isShown);
   setTimeout(centerTree, 260);
 });
@@ -3705,6 +4761,10 @@ document.getElementById('btn-style').addEventListener('click', () => {
 
 // 🕌 اختيار النبي ﷺ وتركيز الشجرة عليه بزوم متوسط
 document.getElementById('btn-prophet').addEventListener('click', () => {
+  // انتقل لعرض الشجرة إن كان المستخدم في العرض المبسط
+  if (document.body.classList.contains('view-outline')) {
+    switchView('tree');
+  }
   const muhNode = findNodeAnywhere('muhammad');
   if (!muhNode) return;
   // تأكد من أن النبي مرئي (بدون لمس الفروع الأخرى)
@@ -3727,6 +4787,15 @@ document.getElementById('btn-prophet').addEventListener('click', () => {
 // Initial render
 update();
 centerTree();
+
+// ===== تهيئة العرض الافتراضي: الشجرة + السايدبار ظاهرين، outline panel مخفي =====
+(function initDefaultView() {
+  // الشجرة دائمًا مرئية عند فتح البرنامج
+  // السايدبار (قائمة الأسماء) مرئية افتراضيًا على اليمين
+  // العرض المبسط (outline) مخفي — يفتح بضغط 🗂️ ويغلق السايدبار تلقائيًا
+  try { localStorage.removeItem('quraish_view'); } catch(e) {}
+  document.body.classList.remove('view-outline', 'view-tree', 'outline-open');
+})();
 
 // Expose for HTML onclick
 window.selectPerson = selectPerson;
